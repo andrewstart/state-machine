@@ -23,10 +23,15 @@ export class StateMachine<S = {}, O = any> {
         source.transitions.set(name, dest);
     }
     
-    public run(session:S):Promise<[string, O]> {
+    public run(session:S):Promise<[string, O]>;
+    public run<I>(session:S, startState:State<Session<S>, I, any>, input:I):Promise<[string, O]>;
+    public run<I>(session:S, startState?:State<Session<S>, I, any>, input?:I):Promise<[string, O]> {
         const realSession = session as (Session<S>);
         realSession._runPromise = new ExtPromiseWrapper();
-        this.beginState(realSession, this.firstState, null, null);
+        if (!startState) {
+            startState = this.firstState;
+        }
+        this.beginState(realSession, startState, input, null);
         return realSession._runPromise.promise;
     }
     
@@ -37,6 +42,21 @@ export class StateMachine<S = {}, O = any> {
         }
         //cancel promise session (prevents _runPromise from resolving)
         realSession.activePromise.cancel();
+        //do cleanup of active state
+        if (realSession.activeStateCleanup) {
+            realSession.activeStateCleanup();
+        }
+        //clear variables
+        realSession._runPromise = null;
+        realSession.activePromise = null;
+        realSession.activeStateCleanup = null;
+    }
+    
+    /**
+     * Clears promise/callback variables from the session so that it is safe(r) for JSON.stringify()
+     */
+    public pauseSession(session:S) {
+        const realSession = session as (Session<S>);
         //do cleanup of active state
         if (realSession.activeStateCleanup) {
             realSession.activeStateCleanup();
