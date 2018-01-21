@@ -1,0 +1,12 @@
+{
+  "name": "state-machine",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {},
+  "author": "Andrew Start <andrew.start@jibo.com>",
+  "license": "ISC",
+  "dependencies": {
+    "eventemitter3": "^3.0.0"
+  }
+}
