@@ -40,6 +40,8 @@ test.addTransition('transition', first, second);
 test.addTransition('', second, last);
 //set up final state -> completion - state output must match StateMachine output type
 test.addTransition('all done', last);
+//add a global error transition to catch all errors and go back to the first state
+test.addTransition('~', null, first);
 
 test.run({
     foo: 'bar'

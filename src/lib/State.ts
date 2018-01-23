@@ -1,4 +1,5 @@
 import {Session} from './Session';
+import {ERROR_PREFIX} from './const';
 
 export class State<S, I = any, O = any> {
     public name:string;
@@ -14,7 +15,7 @@ export class State<S, I = any, O = any> {
     
     public onEntry(session:Session<S>, input:I, transition?:string): Promise<[string, O]> {
         //should be overridden
-        return Promise.reject(['~DefaultState', null]);
+        return Promise.reject([`${ERROR_PREFIX}DefaultState`, null]);
     }
     
     public destroy(): void {

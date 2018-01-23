@@ -5,7 +5,7 @@ export interface BaseSession {
     /**
      * @internal
      */
-    _runPromise: ExtPromiseWrapper<any>;
+    _runPromise: ExtPromiseWrapper<[string, any]>;
     /**
      * Promise session wrapping active state's `onEntry()` promise, as well as being available
      * to wrap internal steps.

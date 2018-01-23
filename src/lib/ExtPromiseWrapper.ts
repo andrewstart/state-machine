@@ -9,7 +9,7 @@ export class ExtPromiseWrapper<T> {
     /**
      * Should be called to reject the promise of this wrapper
      */
-    public reject: (error: Error | string) => void;
+    public reject: (error: T) => void;
     /**
      * The promise that is wrapped in this wrapper
      */
