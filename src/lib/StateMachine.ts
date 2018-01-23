@@ -66,14 +66,34 @@ export class StateMachine<S = {}, O = any> {
             realSession.activeStateCleanup();
         }
         //clear variables
+        realSession._current = null;
         realSession._runPromise = null;
         realSession.activePromise = null;
         realSession.activeStateCleanup = null;
     }
     
+    /**
+     * Injects an error into the state machine, interrupting the current state and performing
+     * standard error transition handling to determine where to go next.
+     */
+    public interrupt(session:S, transition:string, input?:any) {
+        const realSession = session as (Session<S>);
+        if (transition[0] !== ERROR_PREFIX) {
+            transition = ERROR_PREFIX + transition;
+        }
+        const promise = realSession._runPromise;
+        const current = realSession._current;
+        this.stop(session);
+        //restore run promise
+        realSession._runPromise = promise;
+        //find the appropriate transition and enact it
+        this.findAndRunNextState(realSession, current, [transition, input]);
+    }
+    
     private beginState(session:Session<S>, state:State<S>, input:any, transition:string) {
         //clear previous cleanup
         session.activeStateCleanup = null;
+        session._current = state;
         session.activePromise = new CancelTokenSession();
         session.activePromise.wrap(state.onEntry(session, input, transition))
         .catch((error) => {
@@ -100,54 +120,62 @@ export class StateMachine<S = {}, O = any> {
             }
             return [`${ERROR_PREFIX}UnknownError`, error] as [string, any];
         }).then((result) => {
-            const [trans, output] = result;
-            const transMap = state.transitions;
-            //find and begin next state, or resolve session._runPromise
-            if (trans[0] === ERROR_PREFIX) {
-                //handle as error
-                const list = this.generateErrorTransitionList(trans);
-                let dest:State<S>;
-                //check state for transitions
-                for (let i = 0; i < list.length; ++i) {
-                    if (transMap.has(list[i])) {
-                        dest = transMap.get(list[i]);
-                        break;
-                    }
-                }
-                //if no transition found, check global catches
-                if (!dest) {
-                    for (let i = 0; i < list.length; ++i) {
-                        if (this.globalCatches.has(list[i])) {
-                            dest = this.globalCatches.get(list[i]);
-                            break;
-                        }
-                    }
-                }
-                //now that we have a destination, start that state
-                if (!dest) {
-                    this.beginState(session, dest, output, trans);
-                } else {
-                    //no error handler found, stop the state machine
-                    session._runPromise.reject(result);
-                }
-                return;
-            }
-            if (transMap.has(trans) || transMap.has(WILDCARD_TRANSITION)) {
-                //get the destination state
-                let dest = transMap.has(trans) ? transMap.get(trans) : transMap.get(WILDCARD_TRANSITION);
-                if (dest) {
-                    //begin the state
-                    this.beginState(session, dest, output, trans);
-                } else {
-                    //if transition exists but not state, end the state machine
-                    session._runPromise.resolve(result);
-                }
-                return;
-            }
-            session._runPromise.reject([`${ERROR_PREFIX}TransitionError`, new Error(`Unable to find transition ${trans} on state ${state.name}`)]);
+            this.findAndRunNextState(session, state, result);
         });
     }
     
+    private findAndRunNextState(session:Session<S>, state:State<S>, result:[string, any]):void {
+        const [trans, output] = result;
+        const transMap = state.transitions;
+        //find and begin next state, or resolve session._runPromise
+        if (trans[0] === ERROR_PREFIX) {
+            //handle as error
+            const list = this.generateErrorTransitionList(trans);
+            let dest:State<S>;
+            //check state for transitions
+            for (let i = 0; i < list.length; ++i) {
+                if (transMap.has(list[i])) {
+                    dest = transMap.get(list[i]);
+                    break;
+                }
+            }
+            //if no transition found, check global catches
+            if (!dest) {
+                for (let i = 0; i < list.length; ++i) {
+                    if (this.globalCatches.has(list[i])) {
+                        dest = this.globalCatches.get(list[i]);
+                        break;
+                    }
+                }
+            }
+            //now that we have a destination, start that state
+            if (!dest) {
+                this.beginState(session, dest, output, trans);
+            } else {
+                //no error handler found, stop the state machine
+                session._runPromise.reject(result);
+            }
+            return;
+        }
+        if (transMap.has(trans) || transMap.has(WILDCARD_TRANSITION)) {
+            //get the destination state
+            let dest = transMap.has(trans) ? transMap.get(trans) : transMap.get(WILDCARD_TRANSITION);
+            if (dest) {
+                //begin the state
+                this.beginState(session, dest, output, trans);
+            } else {
+                //if transition exists but not state, end the state machine
+                session._runPromise.resolve(result);
+            }
+            return;
+        }
+        session._runPromise.reject([`${ERROR_PREFIX}TransitionError`, new Error(`Unable to find transition ${trans} on state ${state.name}`)]);
+    }
+    
+    /**
+     * Generates an ordered error transition handler list for a given error transition, from
+     * most to least specific.
+     */
     private generateErrorTransitionList(transition:string):string[] {
         //start with the general error transition
         const out:string[] = [ERROR_PREFIX];

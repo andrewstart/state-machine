@@ -8,7 +8,6 @@ Experiments with strongly typed state machine code that should be compatible wit
 `~` will catch all errors.
 
 #### To do:
-* `StateMachine.interrupt()` method - inject an error into the state machine, cancelling the current state
 * Threading - Allow for a 'main' thread, that is when the general state machine starts & ends, and
 parallel threads that are started within the machine and can communicate with the main thread via
 interrupts + other mechanisms
