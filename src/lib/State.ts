@@ -1,4 +1,4 @@
-import {Session} from './Session';
+import {Session, Thread} from './Session';
 import {ERROR_PREFIX} from './const';
 
 export class State<S, I = any, O = any> {
@@ -13,7 +13,7 @@ export class State<S, I = any, O = any> {
         this.transitions = new Map();
     }
     
-    public onEntry(session:Session<S>, input:I, transition?:string): Promise<[string, O]> {
+    public onEntry(session:Session<S>, thread:Thread, input:I, transition?:string): Promise<[string, O]> {
         //should be overridden
         return Promise.reject([`${ERROR_PREFIX}DefaultState`, null]);
     }

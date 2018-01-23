@@ -1,15 +1,19 @@
-import {Session} from './Session';
+import {Session, Thread} from './Session';
 import {State} from './State';
 import {ExtPromiseWrapper} from './ExtPromiseWrapper';
 import {CancelTokenSession} from './CancelTokenSession';
 import {WILDCARD_TRANSITION, ERROR_PREFIX, ERROR_SPLIT} from './const';
 
+const MAIN_THREAD = 0;
+
 export class StateMachine<S = {}, O = any> {
     private firstState: State<S>;
     private globalCatches: Map<string, State<S>>;
+    private nextThreadId:number;
     
     constructor() {
         this.globalCatches = new Map();
+        this.nextThreadId = MAIN_THREAD + 1;
     }
     
     public addTransition<T>(name:null, source:null, firstState:State<S, void, any>):void;
@@ -43,12 +47,15 @@ export class StateMachine<S = {}, O = any> {
     public run<I>(session:S, startState:State<Session<S>, I, any>, input:I):Promise<[string, O]>;
     public run<I>(session:S, startState?:State<Session<S>, I, any>, input?:I):Promise<[string, O]> {
         const realSession = session as (Session<S>);
-        realSession._runPromise = new ExtPromiseWrapper();
+        realSession._threads = new Map();
+        const thread = new Thread();
+        realSession._threads.set(MAIN_THREAD, thread);
+        thread._runPromise = new ExtPromiseWrapper();
         if (!startState) {
             startState = this.firstState;
         }
-        this.beginState(realSession, startState, input, null);
-        return realSession._runPromise.promise;
+        this.beginState(realSession, thread, startState, input, null);
+        return thread._runPromise.promise;
     }
     
     /**
@@ -56,20 +63,21 @@ export class StateMachine<S = {}, O = any> {
      */
     public stop(session:S) {
         const realSession = session as (Session<S>);
-        if (!realSession._runPromise || !realSession.activePromise) {
+        const thread = realSession._threads.get(MAIN_THREAD);
+        if (!thread._runPromise || !thread._activePromise) {
             throw new Error('Session is not running');
         }
         //cancel promise session (prevents _runPromise from resolving)
-        realSession.activePromise.cancel();
+        thread._activePromise.cancel();
         //do cleanup of active state
-        if (realSession.activeStateCleanup) {
-            realSession.activeStateCleanup();
+        if (thread.activeStateCleanup) {
+            thread.activeStateCleanup();
         }
         //clear variables
-        realSession._current = null;
-        realSession._runPromise = null;
-        realSession.activePromise = null;
-        realSession.activeStateCleanup = null;
+        thread._current = null;
+        thread._runPromise = null;
+        thread._activePromise = null;
+        thread.activeStateCleanup = null;
     }
     
     /**
@@ -81,21 +89,22 @@ export class StateMachine<S = {}, O = any> {
         if (transition[0] !== ERROR_PREFIX) {
             transition = ERROR_PREFIX + transition;
         }
-        const promise = realSession._runPromise;
-        const current = realSession._current;
+        const thread = realSession._threads.get(MAIN_THREAD);
+        const promise = thread._runPromise;
+        const current = thread._current;
         this.stop(session);
         //restore run promise
-        realSession._runPromise = promise;
+        thread._runPromise = promise;
         //find the appropriate transition and enact it
-        this.findAndRunNextState(realSession, current, [transition, input]);
+        this.findAndRunNextState(realSession, thread, current, [transition, input]);
     }
     
-    private beginState(session:Session<S>, state:State<S>, input:any, transition:string) {
+    private beginState(session:Session<S>, thread:Thread, state:State<S>, input:any, transition:string) {
         //clear previous cleanup
-        session.activeStateCleanup = null;
-        session._current = state;
-        session.activePromise = new CancelTokenSession();
-        session.activePromise.wrap(state.onEntry(session, input, transition))
+        thread.activeStateCleanup = null;
+        thread._current = state;
+        thread._activePromise = new CancelTokenSession();
+        thread._activePromise.wrap(state.onEntry(session, thread, input, transition))
         .catch((error) => {
             //turn error into [transition, result] format, if it isn't already
             //casting is to standardize what typescript thinks that the output is
@@ -120,11 +129,11 @@ export class StateMachine<S = {}, O = any> {
             }
             return [`${ERROR_PREFIX}UnknownError`, error] as [string, any];
         }).then((result) => {
-            this.findAndRunNextState(session, state, result);
+            this.findAndRunNextState(session, thread, state, result);
         });
     }
     
-    private findAndRunNextState(session:Session<S>, state:State<S>, result:[string, any]):void {
+    private findAndRunNextState(session:Session<S>, thread:Thread, state:State<S>, result:[string, any]):void {
         const [trans, output] = result;
         const transMap = state.transitions;
         //find and begin next state, or resolve session._runPromise
@@ -149,11 +158,11 @@ export class StateMachine<S = {}, O = any> {
                 }
             }
             //now that we have a destination, start that state
-                this.beginState(session, dest, output, trans);
             if (dest) {
+                this.beginState(session, thread, dest, output, trans);
             } else {
-                //no error handler found, stop the state machine
-                session._runPromise.reject(result);
+                //no error handler found, stop the thread
+                thread._runPromise.reject(result);
             }
             return;
         }
@@ -162,14 +171,14 @@ export class StateMachine<S = {}, O = any> {
             let dest = transMap.has(trans) ? transMap.get(trans) : transMap.get(WILDCARD_TRANSITION);
             if (dest) {
                 //begin the state
-                this.beginState(session, dest, output, trans);
+                this.beginState(session, thread, dest, output, trans);
             } else {
                 //if transition exists but not state, end the state machine
-                session._runPromise.resolve(result);
+                thread._runPromise.resolve(result);
             }
             return;
         }
-        session._runPromise.reject([`${ERROR_PREFIX}TransitionError`, new Error(`Unable to find transition ${trans} on state ${state.name}`)]);
+        thread._runPromise.reject([`${ERROR_PREFIX}TransitionError`, new Error(`Unable to find transition ${trans} on state ${state.name}`)]);
     }
     
     /**

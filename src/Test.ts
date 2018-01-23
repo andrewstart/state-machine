@@ -4,14 +4,14 @@ interface MySession {
     foo: string;
 }
 
-const first = new Exec<MySession, void, {bar:number}>('First State', async (session, input, trans) => {
+const first = new Exec<MySession, void, {bar:number}>('First State', async (session, thread, input, trans) => {
     session.foo = 'Overriding foo';
     return ['transition', {bar:3}];
 });
 
-const second = new Exec<MySession, {bar:number}, string>('Second state', async (session:Session<MySession>, input, trans) => {
+const second = new Exec<MySession, {bar:number}, string>('Second state', async (session:Session<MySession>, thread, input, trans) => {
     //once a second, log session.foo for input.bar # of times
-    await session.activePromise.wrap(new Promise((resolve) => {
+    await thread.wrap(new Promise((resolve) => {
         const interval = setInterval(() => {
             console.log(session.foo);
             if (--input.bar <= 0) {
@@ -19,14 +19,14 @@ const second = new Exec<MySession, {bar:number}, string>('Second state', async (
                 resolve();
             }
         }, 1000);
-        session.activeStateCleanup = () => {
+        thread.activeStateCleanup = () => {
             clearInterval(interval);
         };
     }));
     return ['', 'all done'];
 });
 
-const last = new Exec<MySession, string, boolean>('First State', async (session, input, trans) => {
+const last = new Exec<MySession, string, boolean>('First State', async (session, thread, input, trans) => {
     console.log('Previous state said ', input.toUpperCase());
     return [input, true];
 });
