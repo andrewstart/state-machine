@@ -149,8 +149,8 @@ export class StateMachine<S = {}, O = any> {
                 }
             }
             //now that we have a destination, start that state
-            if (!dest) {
                 this.beginState(session, dest, output, trans);
+            if (dest) {
             } else {
                 //no error handler found, stop the state machine
                 session._runPromise.reject(result);
