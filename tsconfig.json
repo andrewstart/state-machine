@@ -4,6 +4,7 @@
         "allowJs": false,
         "module": "commonjs",
         "moduleResolution": "node",
+        "noUnusedLocals": true,
         "experimentalDecorators": true,
         "typeRoots": ["node_modules/@types"]
     },
