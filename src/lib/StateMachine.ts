@@ -59,7 +59,8 @@ export class StateMachine<S = {}, O = any> {
     }
     
     /**
-     * Stops execution. In addition, clears promise/callback variables from the session so that it * is safe(r) for JSON.stringify() and can be used to restart execution.
+     * Stops execution. In addition, clears promise/callback variables from the session so that it
+     * is safe(r) for JSON.stringify() and can be used to restart execution.
      */
     public stop(session:S) {
         const realSession = session as (Session<S>);
@@ -69,15 +70,10 @@ export class StateMachine<S = {}, O = any> {
         }
         //cancel promise session (prevents _runPromise from resolving)
         thread._activePromise.cancel();
-        //do cleanup of active state
-        if (thread.activeStateCleanup) {
-            thread.activeStateCleanup();
-        }
         //clear variables
         thread._current = null;
         thread._runPromise = null;
         thread._activePromise = null;
-        thread.activeStateCleanup = null;
     }
     
     /**
@@ -101,7 +97,6 @@ export class StateMachine<S = {}, O = any> {
     
     private beginState(session:Session<S>, thread:Thread, state:State<S>, input:any, transition:string) {
         //clear previous cleanup
-        thread.activeStateCleanup = null;
         thread._current = state;
         thread._activePromise = new CancelTokenSession();
         thread._activePromise.wrap(state.onEntry(session, thread, input, transition))

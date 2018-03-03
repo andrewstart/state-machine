@@ -10,19 +10,19 @@ const first = new Exec<MySession, void, {bar:number}>('First State', async (sess
 });
 
 const second = new Exec<MySession, {bar:number}, string>('Second state', async (session:Session<MySession>, thread, input, trans) => {
+    let interval;
     //once a second, log session.foo for input.bar # of times
     await thread.wrap(new Promise((resolve) => {
-        const interval = setInterval(() => {
+        interval = setInterval(() => {
             console.log(session.foo);
             if (--input.bar <= 0) {
                 clearInterval(interval);
                 resolve();
             }
         }, 1000);
-        thread.activeStateCleanup = () => {
-            clearInterval(interval);
-        };
-    }));
+    }), () => {
+        clearInterval(interval);
+    });
     return ['', 'all done'];
 });
 

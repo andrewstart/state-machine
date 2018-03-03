@@ -1,4 +1,4 @@
-import {CancelTokenSession} from './CancelTokenSession';
+import {CancelTokenSession, CancelHandler} from './CancelTokenSession';
 import {ExtPromiseWrapper} from './ExtPromiseWrapper';
 import {State} from './State';
 
@@ -17,15 +17,9 @@ export class Thread {
      * @internal
      */
     _activePromise: CancelTokenSession = null;
-    /**
-     * Callback to clean up an internal step if a state is interrupted. If an async step inside
-     * an `onEntry()` needs cleaning up, then it should set this property on the Session to a method
-     * that will take care of that clean up.
-     */
-    activeStateCleanup: () => void = null;
     
-    wrap<T>(promise: Promise<T>): Promise<T> {
-        return this._activePromise.wrap(promise);
+    wrap<T>(promise: Promise<T>, onCancel?: CancelHandler): Promise<T> {
+        return this._activePromise.wrap(promise, onCancel);
     }
 }
 

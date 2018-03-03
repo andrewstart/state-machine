@@ -7,6 +7,5 @@
   "author": "Andrew Start <andrew.start@jibo.com>",
   "license": "ISC",
   "dependencies": {
-    "eventemitter3": "^3.0.0"
   }
 }
