@@ -1,5 +1,5 @@
 import {State} from './State';
-import {Session} from './Session';
+import {Session, Thread} from './Session';
 
 export class Wait<S, I = any> extends State<S, I, I> {
     private waitMilliseconds:number;
@@ -8,9 +8,9 @@ export class Wait<S, I = any> extends State<S, I, I> {
         this.waitMilliseconds = waitMilliseconds;
     }
     
-    public onEntry(session:Session<S>, input:I, transition?:string): Promise<[string, I]> {
+    public onEntry(session:Session<S>, thread:Thread, input:I, transition?:string): Promise<[string, I]> {
         let timeout;
-        return session.activePromise.wrap(new Promise((resolve) => {
+        return thread.wrap(new Promise((resolve) => {
             timeout = setTimeout(() => {
                 resolve([transition, input]);
             }, this.waitMilliseconds);
