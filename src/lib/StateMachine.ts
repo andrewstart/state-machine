@@ -61,15 +61,10 @@ export class StateMachine<S = {}, O = any> {
         }
         //cancel promise session (prevents _runPromise from resolving)
         realSession.activePromise.cancel();
-        //do cleanup of active state
-        if (realSession.activeStateCleanup) {
-            realSession.activeStateCleanup();
-        }
         //clear variables
         realSession._current = null;
         realSession._runPromise = null;
         realSession.activePromise = null;
-        realSession.activeStateCleanup = null;
     }
     
     /**
@@ -92,7 +87,6 @@ export class StateMachine<S = {}, O = any> {
     
     private beginState(session:Session<S>, state:State<S>, input:any, transition:string) {
         //clear previous cleanup
-        session.activeStateCleanup = null;
         session._current = state;
         session.activePromise = new CancelTokenSession();
         session.activePromise.wrap(state.onEntry(session, input, transition))
@@ -149,8 +143,8 @@ export class StateMachine<S = {}, O = any> {
                 }
             }
             //now that we have a destination, start that state
-                this.beginState(session, dest, output, trans);
             if (dest) {
+                this.beginState(session, dest, output, trans);
             } else {
                 //no error handler found, stop the state machine
                 session._runPromise.reject(result);

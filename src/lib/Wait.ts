@@ -9,13 +9,13 @@ export class Wait<S, I = any> extends State<S, I, I> {
     }
     
     public onEntry(session:Session<S>, input:I, transition?:string): Promise<[string, I]> {
+        let timeout;
         return session.activePromise.wrap(new Promise((resolve) => {
-            const timeout = setTimeout(() => {
+            timeout = setTimeout(() => {
                 resolve([transition, input]);
             }, this.waitMilliseconds);
-            session.activeStateCleanup = () => {
-                clearTimeout(timeout);
-            };
-        }));
+        }), () => {
+            clearTimeout(timeout);
+        });
     }
 }
