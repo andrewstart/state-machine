@@ -14,4 +14,4 @@ interrupts + other mechanisms
 * StateMachine mode: Single session or multi-session - in single session track the current session data
 so that it does not need to be passed for `stop()` or `interrupt()` calls.
 * Tracing what states have been run/transitions taken for debugging purposes
-* Creation of additional basic states - SubFlow, Throw, Catch, something to wait for multiple parallel states to complete
+* Creation of additional basic states - something to wait for multiple parallel states to complete

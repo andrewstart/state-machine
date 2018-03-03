@@ -52,7 +52,8 @@ export class StateMachine<S = {}, O = any> {
     }
     
     /**
-     * Stops execution. In addition, clears promise/callback variables from the session so that it * is safe(r) for JSON.stringify() and can be used to restart execution.
+     * Stops execution. In addition, clears promise/callback variables from the session so that it
+     * is safe(r) for JSON.stringify() and can be used to restart execution.
      */
     public stop(session:S) {
         const realSession = session as (Session<S>);
