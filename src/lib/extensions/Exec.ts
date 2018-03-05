@@ -1,5 +1,5 @@
-import {State} from './State';
-import {Session, Thread} from './Session';
+import {State} from '../core/State';
+import {Session, Thread} from '../core/Session';
 
 export type StateMethod<S, I, O> = (session:Session<S>, thread:Thread, input:I, transition?:string) => Promise<[string, O]>;
 

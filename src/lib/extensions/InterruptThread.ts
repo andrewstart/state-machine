@@ -1,7 +1,7 @@
-import {StateMachine, ThreadID} from './StateMachine';
-import {State} from './State';
-import {Decorator, RunMode} from './Decorator';
-import {Session} from './Session';
+import {StateMachine, ThreadID} from '../core/StateMachine';
+import {State} from '../core/State';
+import {Decorator, RunMode} from '../core/Decorator';
+import {Session} from '../core/Session';
 
 export class InterruptThread extends Decorator<void> {
     private threadId:ThreadID;

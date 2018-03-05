@@ -1,7 +1,7 @@
-import {StateMachine, ThreadID} from './StateMachine';
-import {State} from './State';
-import {Decorator} from './Decorator';
-import {Session} from './Session';
+import {StateMachine, ThreadID} from '../core/StateMachine';
+import {State} from '../core/State';
+import {Decorator} from '../core/Decorator';
+import {Session} from '../core/Session';
 
 export class BeginThread extends Decorator<ThreadID> {
     private threadId:ThreadID;
