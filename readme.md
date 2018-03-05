@@ -1,5 +1,11 @@
 Experiments with strongly typed state machine code that should be compatible with making a visual editing tool.
 
+#### Goals
+* Strongly typed code, including (as much as possible) transitions between states
+* Usable in environments where you have multiple sessions running through the state machine simultaneously
+* Useable in environments where you want to be able to pause a session, and restart it from serialized data
+* Can be built with simple enough code that some sort of visual editing tool can be built to produce state machine code (with externally defined states)
+
 #### Transition handling:
 * All transitions are by name, with names beginning with `~` being considered an 'error' transition.
 * A transition named by an empty string accepts all non-error transition names from the source state.
