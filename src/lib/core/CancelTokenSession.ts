@@ -1,5 +1,7 @@
 import { CancelToken, CancelHandler } from './CancelToken';
 
+export { CancelHandler };
+
 /**
  * @description A class that represents a session for a set of promise tokens
  */

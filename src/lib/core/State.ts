@@ -1,4 +1,5 @@
-import {Session} from './Session';
+import {Session, Thread} from './Session';
+import {Decorator} from './Decorator';
 import {ERROR_PREFIX} from './const';
 
 export class State<S, I = any, O = any> {
@@ -7,13 +8,18 @@ export class State<S, I = any, O = any> {
      * @internal
      */
     public transitions: Map<string, State<S>>;
+    /**
+     * @internal
+     */
+    public decorators: Set<Decorator<any>>;
     
     constructor(name:string) {
         this.name = name;
         this.transitions = new Map();
+        this.decorators = new Set();
     }
     
-    public onEntry(session:Session<S>, input:I, transition?:string): Promise<[string, O]> {
+    public onEntry(session:Session<S>, thread:Thread, input:I, transition?:string): Promise<[string, O]> {
         //should be overridden
         return Promise.reject([`${ERROR_PREFIX}DefaultState`, null]);
     }
@@ -21,6 +27,7 @@ export class State<S, I = any, O = any> {
     public destroy(): void {
         this.name = null;
         this.transitions = null;
+        this.decorators = null;
     }
     
     public toString() {
