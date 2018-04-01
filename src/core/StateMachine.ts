@@ -179,7 +179,7 @@ export class StateMachine<S = {}, O = any> {
         thread._current = state;
         thread._activePromise = new CancelTokenSession();
         //run decorators
-        const run = (decorator) => {
+        const run = (decorator:Decorator<any>) => {
             this.runDecorator(RunMode.START_WITH_STATE, decorator, session, state, [transition, input]);
         };
         this.globalDecorators.forEach(run);
@@ -211,7 +211,7 @@ export class StateMachine<S = {}, O = any> {
             return [`${ERROR_PREFIX}UnknownError`, error] as [string, any];
         }).then((result) => {
             //run decorators
-            const run = (decorator) => {
+            const run = (decorator:Decorator<any>) => {
                 this.runDecorator(RunMode.END_WITH_STATE, decorator, session, state, result);
             };
             this.globalDecorators.forEach(run);

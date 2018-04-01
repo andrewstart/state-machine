@@ -9,7 +9,7 @@ export class Wait<S, I = any> extends State<S, I, I> {
     }
     
     public onEntry(session:Session<S>, thread:Thread, input:I, transition?:string): Promise<[string, I]> {
-        let timeout;
+        let timeout:number;
         return thread.wrap(new Promise((resolve) => {
             timeout = setTimeout(() => {
                 resolve([transition, input]);
