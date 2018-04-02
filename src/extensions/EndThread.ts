@@ -2,6 +2,7 @@ import {StateMachine, ThreadID} from '../core/StateMachine';
 import {State} from '../core/State';
 import {Decorator, RunMode} from '../core/Decorator';
 import {Session} from '../core/Session';
+import {Transition} from '../core/types';
 
 export class EndThread extends Decorator<void> {
     private threadId:ThreadID;
@@ -15,7 +16,7 @@ export class EndThread extends Decorator<void> {
         //nothing needs doing
     }
     
-    public run(sm:StateMachine, session:Session<any>, state:State<any>, result:[string, any]) {
+    public run(sm:StateMachine, session:Session<any>, state:State<any>, result:Transition) {
         sm.startSecondaryThread(this.threadId, session, state, null);
     }
 }

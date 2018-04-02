@@ -1,6 +1,7 @@
 import {State} from '../core/State';
 import {Session, Thread} from '../core/Session';
 import {StateMachine} from '../core/StateMachine';
+import {Transition} from '../core/types';
 
 export class SubMachine<S, I = any, O = any> extends State<S, I, O> {
     private machine: StateMachine<S, O>;
@@ -9,7 +10,7 @@ export class SubMachine<S, I = any, O = any> extends State<S, I, O> {
         this.machine = machine;
     }
     
-    public onEntry(session:Session<S>, thread:Thread, input:I, transition?:string): Promise<[string, O]> {
+    public onEntry(session:Session<S>, thread:Thread, input:I, transition?:string): Promise<Transition> {
         return thread.wrap(
             this.machine.run(session, null, input),
             () => {

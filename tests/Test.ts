@@ -1,4 +1,4 @@
-import {StateMachine, Exec, Session} from './lib';
+import {StateMachine, Exec, Session} from '../';
 
 interface MySession {
     foo: string;

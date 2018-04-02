@@ -4,6 +4,7 @@ import {Decorator, RunMode} from './Decorator';
 import {ExtPromiseWrapper} from './ExtPromiseWrapper';
 import {CancelTokenSession} from './CancelTokenSession';
 import {WILDCARD_TRANSITION, ERROR_PREFIX, ERROR_SPLIT} from './const';
+import {Transition} from './types';
 
 export type ThreadID = number;
 
@@ -195,20 +196,20 @@ export class StateMachine<S = {}, O = any> {
                         //ensure first character is a tilde, for an error transition
                         error[0] = ERROR_PREFIX + error[0];
                     }
-                    return error as [string, any];
+                    return error as Transition;
                 }
                 if (typeof error === 'string') {
                     if (error[0] !== ERROR_PREFIX) {
                         //ensure first character is a tilde, for an error transition
                         error = ERROR_PREFIX + error;
                     }
-                    return [error, null] as [string, any];
+                    return [error, null] as Transition;
                 }
                 if (error instanceof Error) {
-                    return [`${ERROR_PREFIX}${error.name}`, error] as [string, any];
+                    return [`${ERROR_PREFIX}${error.name}`, error] as Transition;
                 }
             }
-            return [`${ERROR_PREFIX}UnknownError`, error] as [string, any];
+            return [`${ERROR_PREFIX}UnknownError`, error] as Transition;
         }).then((result) => {
             //run decorators
             const run = (decorator:Decorator<any>) => {
