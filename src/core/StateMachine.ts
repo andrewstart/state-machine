@@ -286,8 +286,8 @@ export class StateMachine<S = {}, O = any> {
         const out:string[] = [ERROR_PREFIX];
         const split = transition.split(ERROR_SPLIT);
         //if transition contains ERROR_SPLIT (split.length > 1), hit all the intermediate transitions that could be made
-        for (let i = 0; i < split.length - 1; ++i) {
-            out.unshift(split.slice(0, i).join(ERROR_PREFIX));
+        for (let i = split.length - 1; i > 0; --i) {
+            out.unshift(split.slice(0, i).join(ERROR_SPLIT));
         }
         out.unshift(transition);
         return out;
