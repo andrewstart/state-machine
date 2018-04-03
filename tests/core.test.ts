@@ -1,6 +1,6 @@
-import {StateMachine, State, Transition, ERROR_PREFIX} from `../`;
-import assert = require(`assert`);
-import sinon = require(`sinon`);
+import {StateMachine, State, Transition, ERROR_PREFIX} from '../';
+import assert = require('assert');
+import sinon = require('sinon');
 
 interface TestSession {
 }
@@ -13,6 +13,17 @@ class Resolver extends State<TestSession> {
 	}
 	onEntry() {
 		return Promise.resolve([this.transition, this.value] as Transition);
+	}
+}
+
+class Rejecter extends State<TestSession> {
+	public onEntrySpy:sinon.SinonSpy;
+	constructor(name:string, public err) {
+		super(name);
+		this.onEntrySpy = sinon.spy(this, `onEntry`);
+	}
+	onEntry() {
+		return Promise.reject(this.err);
 	}
 }
 
@@ -113,12 +124,12 @@ describe(`Core Functionality`, function() {
 		
 		it(`Error transitions are taken`, function() {
 			const sm = new StateMachine<TestSession, number>();
-			const first = new Resolver(`First`, `~trans`);
+			const first = new Resolver(`First`, `${ERROR_PREFIX}trans`);
 			sm.addTransition(null, null, first);
 			const last = new Resolver(`Last`, `output`, 42);
-			sm.addTransition(`~trans`, first, last);
+			sm.addTransition(`${ERROR_PREFIX}trans`, first, last);
 			sm.addTransition(``, last);
-			assert.equal((first as any).transitions.get(`~trans`), last, `First state should go to last state`);
+			assert.equal((first as any).transitions.get(`${ERROR_PREFIX}trans`), last, `First state should go to last state`);
 			return sm.run({})
 			.then((result) => {
 				assert(first.onEntrySpy.calledOnce, `First state should have been entered`);
@@ -131,10 +142,10 @@ describe(`Core Functionality`, function() {
 		
 		it(`Less specific error transitions are taken`, function() {
 			const sm = new StateMachine<TestSession, number>();
-			const first = new Resolver(`First`, `~trans.longForm`);
+			const first = new Resolver(`First`, `${ERROR_PREFIX}trans.longForm`);
 			sm.addTransition(null, null, first);
 			const last = new Resolver(`Last`, `output`, 42);
-			sm.addTransition(`~trans`, first, last);
+			sm.addTransition(`${ERROR_PREFIX}trans`, first, last);
 			sm.addTransition(``, last);
 			return sm.run({})
 			.then((result) => {
@@ -146,10 +157,10 @@ describe(`Core Functionality`, function() {
 		
 		it(`Wildcard error transitions are taken`, function() {
 			const sm = new StateMachine<TestSession, number>();
-			const first = new Resolver(`First`, `~trans.longForm`);
+			const first = new Resolver(`First`, `${ERROR_PREFIX}trans.longForm`);
 			sm.addTransition(null, null, first);
 			const last = new Resolver(`Last`, `output`, 42);
-			sm.addTransition(`~`, first, last);
+			sm.addTransition(`${ERROR_PREFIX}`, first, last);
 			sm.addTransition(``, last);
 			return sm.run({})
 			.then((result) => {
@@ -161,12 +172,12 @@ describe(`Core Functionality`, function() {
 		
 		it(`Specific error transitions are preferred over wildcard errors`, function() {
 			const sm = new StateMachine<TestSession, number>();
-			const first = new Resolver(`First`, `~trans.longForm`);
+			const first = new Resolver(`First`, `${ERROR_PREFIX}trans.longForm`);
 			sm.addTransition(null, null, first);
 			const decoy = new Resolver(`Decoy`, `bad`, 0);
-			sm.addTransition(`~`, first, decoy);
+			sm.addTransition(`${ERROR_PREFIX}`, first, decoy);
 			const last = new Resolver(`Last`, `output`, 42);
-			sm.addTransition(`~trans`, first, last);
+			sm.addTransition(`${ERROR_PREFIX}trans`, first, last);
 			sm.addTransition(``, last);
 			return sm.run({})
 			.then((result) => {
@@ -174,6 +185,92 @@ describe(`Core Functionality`, function() {
 				assert(first.onEntrySpy.calledOnce, `First state should have been entered`);
 				assert(last.onEntrySpy.calledOnce, `Last state should have been entered`);
 				assert(first.onEntrySpy.calledBefore(last.onEntrySpy), `First state should have been entered before last state`);
+			});
+		});
+		
+		it(`Rejections with transition data are handled normally`, function() {
+			const sm = new StateMachine<TestSession, number>();
+			const first = new Rejecter(`First`, [`${ERROR_PREFIX}trans`, `foo`]);
+			sm.addTransition(null, null, first);
+			const last = new Resolver(`Last`, `output`, 42);
+			sm.addTransition(`${ERROR_PREFIX}trans`, first, last);
+			sm.addTransition(``, last);
+			return sm.run({})
+			.then((result) => {
+				assert(first.onEntrySpy.calledOnce, `First state should have been entered`);
+				assert(last.onEntrySpy.calledOnce, `Last state should have been entered`);
+				assert(first.onEntrySpy.calledBefore(last.onEntrySpy), `First state should have been entered before last state`);
+				assert.equal(last.onEntrySpy.firstCall.args[3], `${ERROR_PREFIX}trans`, `Transition should be the correct error string`);
+				assert.equal(last.onEntrySpy.firstCall.args[2], `foo`, `Second state input should be state output`);
+			});
+		});
+		
+		it(`Rejections with transition data with non-error strings are converted to errors`, function() {
+			const sm = new StateMachine<TestSession, number>();
+			const first = new Rejecter(`First`, [`trans`, `foo`]);
+			sm.addTransition(null, null, first);
+			const last = new Resolver(`Last`, `output`, 42);
+			sm.addTransition(`${ERROR_PREFIX}trans`, first, last);
+			sm.addTransition(``, last);
+			return sm.run({})
+			.then((result) => {
+				assert(first.onEntrySpy.calledOnce, `First state should have been entered`);
+				assert(last.onEntrySpy.calledOnce, `Last state should have been entered`);
+				assert(first.onEntrySpy.calledBefore(last.onEntrySpy), `First state should have been entered before last state`);
+				assert.equal(last.onEntrySpy.firstCall.args[3], `${ERROR_PREFIX}trans`, `Transition should be the correct error string`);
+				assert.equal(last.onEntrySpy.firstCall.args[2], `foo`, `Second state input should be state output`);
+			});
+		});
+		
+		it(`Rejections with error strings are converted to error transitions`, function() {
+			const sm = new StateMachine<TestSession, number>();
+			const first = new Rejecter(`First`, `${ERROR_PREFIX}trans`);
+			sm.addTransition(null, null, first);
+			const last = new Resolver(`Last`, `output`, 42);
+			sm.addTransition(`${ERROR_PREFIX}trans`, first, last);
+			sm.addTransition(``, last);
+			return sm.run({})
+			.then((result) => {
+				assert(first.onEntrySpy.calledOnce, `First state should have been entered`);
+				assert(last.onEntrySpy.calledOnce, `Last state should have been entered`);
+				assert(first.onEntrySpy.calledBefore(last.onEntrySpy), `First state should have been entered before last state`);
+				assert.equal(last.onEntrySpy.firstCall.args[3], `${ERROR_PREFIX}trans`, `Transition should be the correct error string`);
+				assert.equal(last.onEntrySpy.firstCall.args[2], null, `Second state input should be null`);
+			});
+		});
+		
+		it(`Rejections with non-error strings are converted to error transitions`, function() {
+			const sm = new StateMachine<TestSession, number>();
+			const first = new Rejecter(`First`, `trans`);
+			sm.addTransition(null, null, first);
+			const last = new Resolver(`Last`, `output`, 42);
+			sm.addTransition(`${ERROR_PREFIX}trans`, first, last);
+			sm.addTransition(``, last);
+			return sm.run({})
+			.then((result) => {
+				assert(first.onEntrySpy.calledOnce, `First state should have been entered`);
+				assert(last.onEntrySpy.calledOnce, `Last state should have been entered`);
+				assert(first.onEntrySpy.calledBefore(last.onEntrySpy), `First state should have been entered before last state`);
+				assert.equal(last.onEntrySpy.firstCall.args[3], `${ERROR_PREFIX}trans`, `Transition should be the correct error string`);
+				assert.equal(last.onEntrySpy.firstCall.args[2], null, `Second state input should be null`);
+			});
+		});
+		
+		it(`Rejections with errors are converted to error transitions`, function() {
+			const error = new Error(`Test error`);
+			const sm = new StateMachine<TestSession, number>();
+			const first = new Rejecter(`First`, error);
+			sm.addTransition(null, null, first);
+			const last = new Resolver(`Last`, `output`, 42);
+			sm.addTransition(`${ERROR_PREFIX}${error.name}`, first, last);
+			sm.addTransition(``, last);
+			return sm.run({})
+			.then((result) => {
+				assert(first.onEntrySpy.calledOnce, `First state should have been entered`);
+				assert(last.onEntrySpy.calledOnce, `Last state should have been entered`);
+				assert(first.onEntrySpy.calledBefore(last.onEntrySpy), `First state should have been entered before last state`);
+				assert.equal(last.onEntrySpy.firstCall.args[3], `${ERROR_PREFIX}${error.name}`, `Transition should be the correct error string`);
+				sinon.assert.match(last.onEntrySpy.firstCall.args[2], {message:`Test error`, name: error.name});
 			});
 		});
 	});
