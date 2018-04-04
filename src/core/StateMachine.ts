@@ -218,6 +218,9 @@ export class StateMachine<S = {}, O = any> {
             this.globalDecorators.forEach(run);
             state.decorators.forEach(run);
             this.findAndRunNextState(session, thread, state, result);
+        }).catch((err) => {
+            //something went wrong in the library - report error and bail
+            thread._runPromise.reject(err);
         });
     }
     
@@ -284,10 +287,9 @@ export class StateMachine<S = {}, O = any> {
     private generateErrorTransitionList(transition:string):string[] {
         //start with the general error transition
         const out:string[] = [ERROR_PREFIX];
-        const split = transition.split(ERROR_SPLIT);
         //if transition contains ERROR_SPLIT (split.length > 1), hit all the intermediate transitions that could be made
-        for (let i = split.length - 1; i > 0; --i) {
-            out.unshift(split.slice(0, i).join(ERROR_SPLIT));
+        for (let index = -1; (index = transition.indexOf(ERROR_SPLIT, index + 1)) > -1;) {
+            out.unshift(transition.substring(0, index));
         }
         out.unshift(transition);
         return out;
