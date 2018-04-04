@@ -12,7 +12,6 @@ export class CancelToken {
 
     private _canceled = false;
     private _onCancel?: CancelHandler;
-    private _wrappedPromise: Promise<any>;
 
     /**
      * Creates an instance of CancelToken.
@@ -20,7 +19,6 @@ export class CancelToken {
      * @param {CancelHandler} [onCancel] - Handler function for cancel events
      */
     constructor(wrappedPromise: Promise<any>, onCancel?: CancelHandler) {
-        this._wrappedPromise = wrappedPromise;
         this._onCancel = onCancel;
         this.promise = new Promise<any>((resolve, reject) => {
             wrappedPromise.then((data) => {
@@ -33,30 +31,6 @@ export class CancelToken {
                 }
             });
         });
-    }
-
-    /**
-     * Returns the promise this token created wrapping the internal promise
-     * @returns {Promise<any>} The wrapped promise
-     */
-    getTokenPromise(): Promise<any> {
-        return this.promise;
-    }
-
-    /**
-     * Returns the internal promise that this cancel token wraps
-     * @returns {Promise<any>} The internal pre-wrapped promise
-     */
-    getWrappedPromise(): Promise<any> {
-        return this._wrappedPromise;
-    }
-
-    /**
-     * Is this token canceled
-     * @returns {boolean}
-     */
-    isCanceled(): boolean {
-        return this._canceled;
     }
 
     /**
