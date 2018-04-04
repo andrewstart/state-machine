@@ -14,7 +14,14 @@ Experiments with strongly typed state machine code that should be compatible wit
 `~` will catch all errors.
 
 #### To do:
-* StateMachine mode: Single session or multi-session - in single session track the current session data
+* Tests:
+	* Stopping/interrupting state machines
+	* Restarting state machines
+	* BeginThread/EndThread decorators, InterruptThread state
+	* Exec state
+	* Wait state
+	* SubMachine state
+* Single Session StateMachine subclass - track the current session data
 so that it does not need to be passed for `stop()` or `interrupt()` calls.
 * Creation of additional basic states - something to wait for multiple parallel states to complete, for loop type thing?
 * Figure out good way of "pausing" and restarting session
