@@ -250,4 +250,52 @@ describe(`Transitions`, function() {
 			});
 		});
 	});
+	
+	describe(`Global Errors`, function() {
+		it(`Global error transitions are taken`, function() {
+			const sm = new StateMachine<TestSession, number>();
+			const first = new Resolver(`First`, `${ERROR_PREFIX}trans`);
+			sm.addTransition(null, null, first);
+			const decoy = new Resolver(`Decoy`, ``);
+			sm.addTransition(`trans`, first, decoy);
+			const catchState = new Resolver(`Catch`, ``);
+			sm.addTransition(`${ERROR_PREFIX}trans`, null, catchState);
+			const last = new Resolver(`Last`, `output`, 42);
+			sm.addTransition(``, decoy, last);
+			sm.addTransition(``, catchState, last);
+			sm.addTransition(``, last);
+			return sm.run({})
+			.then((result) => {
+				assert(decoy.onEntrySpy.notCalled, `Decoy state should not have been entered`);
+				assert(first.onEntrySpy.calledOnce, `First state should have been entered`);
+				assert(catchState.onEntrySpy.calledOnce, `Catch state should have been entered`);
+				assert(last.onEntrySpy.calledOnce, `Last state should have been entered`);
+				assert(first.onEntrySpy.calledBefore(catchState.onEntrySpy), `First state should have been entered before catch state`);
+				assert(catchState.onEntrySpy.calledBefore(last.onEntrySpy), `Catch state should have been entered before last state`);
+			});
+		});
+		
+		it(`Specific error transitions are preferred over global error transitions`, function() {
+			const sm = new StateMachine<TestSession, number>();
+			const first = new Resolver(`First`, `${ERROR_PREFIX}trans`);
+			sm.addTransition(null, null, first);
+			const middle = new Resolver(`Middle`, ``);
+			sm.addTransition(`${ERROR_PREFIX}trans`, first, middle);
+			const catchState = new Resolver(`Catch`, ``);
+			sm.addTransition(`${ERROR_PREFIX}trans`, null, catchState);
+			const last = new Resolver(`Last`, `output`, 42);
+			sm.addTransition(``, middle, last);
+			sm.addTransition(``, catchState, last);
+			sm.addTransition(``, last);
+			return sm.run({})
+			.then((result) => {
+				assert(catchState.onEntrySpy.notCalled, `Decoy state should not have been entered`);
+				assert(first.onEntrySpy.calledOnce, `First state should have been entered`);
+				assert(middle.onEntrySpy.calledOnce, `Catch state should have been entered`);
+				assert(last.onEntrySpy.calledOnce, `Last state should have been entered`);
+				assert(first.onEntrySpy.calledBefore(middle.onEntrySpy), `First state should have been entered before middle state`);
+				assert(middle.onEntrySpy.calledBefore(last.onEntrySpy), `Middle state should have been entered before last state`);
+			});
+		});
+	});
 });
