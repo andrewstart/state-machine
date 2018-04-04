@@ -1,3 +1,5 @@
 describe('State Machine Library', function() {
-	require('./core.test');
+	//core tests
+	require('./creation.test');
+	require('./transitions.test');
 });
