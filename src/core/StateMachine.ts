@@ -225,7 +225,10 @@ export class StateMachine<S = {}, O = any> {
     }
     
     private findAndRunNextState(session:Session<S>, thread:Thread, state:State<S>, result:[string, any]):void {
-        const [trans, output] = result;
+        let [trans, output] = result;
+        if (typeof trans !== 'string') {
+            trans = '';
+        }
         const transMap = state.transitions;
         //find and begin next state, or resolve session._runPromise
         if (trans[0] === ERROR_PREFIX) {
