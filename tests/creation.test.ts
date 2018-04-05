@@ -1,20 +1,6 @@
-import {StateMachine, State, Transition} from '../';
+import {StateMachine} from '../';
+import {Resolver} from './utils';
 import assert = require('assert');
-import sinon = require('sinon');
-
-interface TestSession {
-}
-
-class Resolver extends State<TestSession> {
-	public onEntrySpy:sinon.SinonSpy;
-	constructor(name:string, public transition = ``, public value = null) {
-		super(name);
-		this.onEntrySpy = sinon.spy(this, `onEntry`);
-	}
-	onEntry() {
-		return Promise.resolve([this.transition, this.value] as Transition);
-	}
-}
 
 describe(`State Machine Creation`, function() {
 	it(`Can instantiate StateMachine`, function() {
