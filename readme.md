@@ -15,7 +15,7 @@ Experiments with strongly typed state machine code that should be compatible wit
 
 #### To do:
 * Tests:
-	* Stopping/interrupting state machines
+	* Multiple sessions at once
 	* Restarting state machines
 	* BeginThread/EndThread decorators, InterruptThread state
 * Single Session StateMachine subclass - track the current session data

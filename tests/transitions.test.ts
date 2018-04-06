@@ -1,5 +1,5 @@
 import {StateMachine, State, Transition, ERROR_PREFIX} from '../';
-import {Rejecter, Resolver, TestSession} from './utils';
+import {Rejecter, Resolver, ExtPromise, TestSession} from './utils';
 import assert = require('assert');
 import sinon = require('sinon');
 
@@ -300,5 +300,16 @@ describe(`Transitions`, function() {
 			assert.equal(result[0], `${ERROR_PREFIX}InternalError`, `Should have rejected with '${ERROR_PREFIX}InternalError' error transition`);
 			assert.equal(result[1], testError, `Should have rejected with output of the error that was thrown`);
 		});
+	});
+	
+	it(`StateMachine throws error if run() is called while running`, function() {
+		assert.throws(() => {
+			const sm = new StateMachine<TestSession, number>();
+			const first = new ExtPromise(`First`);
+			sm.addTransition(null, null, first);
+			const session = {};
+			sm.run(session);
+			sm.run(session);
+		}, `Should throw an error when running twice`);
 	});
 });

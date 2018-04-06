@@ -64,9 +64,10 @@ export class StateMachine<S extends Object = {}, O = any> {
     public run(session:S):Promise<[string, O]>;
     public run<I>(session:S, startState:State<S, I, any>, input:I):Promise<[string, O]>;
     public run<I>(session:S, startState?:State<S, I, any>, input?:I):Promise<[string, O]> {
-        if (!this.threads.get(session)) {
-            this.threads.set(session, new Map());
+        if (this.threads.has(session)) {
+            throw new Error('StateMachine is already running with session');
         }
+        this.threads.set(session, new Map());
         if (!startState) {
             startState = this.firstState;
         }
@@ -86,10 +87,12 @@ export class StateMachine<S extends Object = {}, O = any> {
     }
     
     /**
-     * Stops execution. In addition, clears promise/callback variables from the session so that it
-     * is safe(r) for JSON.stringify() and can be used to restart execution.
+     * Stops execution.
      */
-    public stop(session:S) {
+    public stop(session:S): void {
+        if (!this.threads.has(session)) {
+            return;
+        }
         this.threads.get(session).forEach((thread) => {
             this.stopThread(thread);
         });
@@ -100,7 +103,10 @@ export class StateMachine<S extends Object = {}, O = any> {
      * Injects an error into the state machine, interrupting the current state and performing
      * standard error transition handling to determine where to go next.
      */
-    public interrupt(session:S, transition:string, input?:any) {
+    public interrupt(session:S, transition:string, input?:any): void {
+        if (!this.threads.has(session)) {
+            throw new Error(`Can't interrupt session - not running`);
+        }
         this.interruptThread(MAIN_THREAD, session, transition, input);
     }
     
