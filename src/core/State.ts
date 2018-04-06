@@ -1,4 +1,4 @@
-import {Session, Thread} from './Session';
+import {Thread} from './Session';
 import {Decorator} from './Decorator';
 import {ERROR_PREFIX} from './const';
 import {Transition} from './types';
@@ -20,7 +20,7 @@ export class State<S, I = any, O = any> {
         this.decorators = new Set();
     }
     
-    public onEntry(session:Session<S>, thread:Thread, input:I, transition?:string): Promise<Transition<O>> {
+    public onEntry(session:S, thread:Thread, input:I, transition?:string): Promise<Transition<O>> {
         //should be overridden
         return Promise.reject([`${ERROR_PREFIX}DefaultState`, null]);
     }

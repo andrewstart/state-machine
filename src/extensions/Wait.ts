@@ -1,5 +1,5 @@
 import {State} from '../core/State';
-import {Session, Thread} from '../core/Session';
+import {Thread} from '../core/Session';
 import {Transition} from '../core/types';
 
 export class Wait<S, I = any> extends State<S, I, I> {
@@ -9,7 +9,7 @@ export class Wait<S, I = any> extends State<S, I, I> {
         this.waitMilliseconds = waitMilliseconds;
     }
     
-    public onEntry(session:Session<S>, thread:Thread, input:I, transition?:string): Promise<Transition<I>> {
+    public onEntry(session:S, thread:Thread, input:I, transition?:string): Promise<Transition<I>> {
         let timeout:number;
         return thread.wrap(new Promise((resolve) => {
             timeout = setTimeout(() => {

@@ -5,5 +5,6 @@ describe('State Machine Library', function() {
 	require('./interruption.test');
 	//extensions
 	require('./exec.test');
+	require('./submachine.test');
 	require('./wait.test');
 });

@@ -1,4 +1,4 @@
-import {Session, Thread} from './Session';
+import {Thread} from './Session';
 import {State} from './State';
 import {Decorator, RunMode} from './Decorator';
 import {ExtPromiseWrapper} from './ExtPromiseWrapper';
@@ -10,16 +10,18 @@ export type ThreadID = number;
 
 export const MAIN_THREAD:ThreadID = 0;
 
-export class StateMachine<S = {}, O = any> {
+export class StateMachine<S extends Object = {}, O = any> {
     private firstState: State<S>;
     private globalCatches: Map<string, State<S>>;
     private nextThreadId: ThreadID;
     private globalDecorators: Set<Decorator<any>>;
+    private threads: WeakMap<S, Map<number, Thread>>;
     
     constructor() {
         this.globalCatches = new Map();
         this.globalDecorators = new Set();
         this.nextThreadId = MAIN_THREAD + 1;
+        this.threads = new WeakMap();
     }
     
     public addTransition<T>(name:null, source:null, firstState:State<S, void, any>):void;
@@ -49,7 +51,7 @@ export class StateMachine<S = {}, O = any> {
         source.transitions.set(name, dest);
     }
     
-    public addDecorator<T>(decorator:Decorator<T>, targetState?:State<Session<S>>):T {
+    public addDecorator<T>(decorator:Decorator<T>, targetState?:State<S>):T {
         if (targetState) {
             //if targeting a specific state, add decorator to just that state
             targetState.decorators.add(decorator);
@@ -60,24 +62,25 @@ export class StateMachine<S = {}, O = any> {
     }
     
     public run(session:S):Promise<[string, O]>;
-    public run<I>(session:S, startState:State<Session<S>, I, any>, input:I):Promise<[string, O]>;
-    public run<I>(session:S, startState?:State<Session<S>, I, any>, input?:I):Promise<[string, O]> {
-        const realSession = session as (Session<S>);
-        realSession._threads = new Map();
+    public run<I>(session:S, startState:State<S, I, any>, input:I):Promise<[string, O]>;
+    public run<I>(session:S, startState?:State<S, I, any>, input?:I):Promise<[string, O]> {
+        if (!this.threads.get(session)) {
+            this.threads.set(session, new Map());
+        }
         if (!startState) {
             startState = this.firstState;
         }
-        const thread = this.startThread(realSession, startState, input);
-        realSession._threads.set(MAIN_THREAD, thread);
+        const thread = this.startThread(session, startState, input);
+        this.threads.get(session).set(MAIN_THREAD, thread);
         
         return thread._runPromise.promise
         .then((output) => {
             //ensure all threads are stopped
-            this.stop(realSession);
+            this.stop(session);
             return output;
         }, (error) => {
             //ensure all threads are stopped
-            this.stop(realSession);
+            this.stop(session);
             throw error;
         });
     }
@@ -87,11 +90,10 @@ export class StateMachine<S = {}, O = any> {
      * is safe(r) for JSON.stringify() and can be used to restart execution.
      */
     public stop(session:S) {
-        const realSession = session as (Session<S>);
-        realSession._threads.forEach((thread) => {
+        this.threads.get(session).forEach((thread) => {
             this.stopThread(thread);
         });
-        realSession._threads = null;
+        this.threads.delete(session);
     }
     
     /**
@@ -99,7 +101,7 @@ export class StateMachine<S = {}, O = any> {
      * standard error transition handling to determine where to go next.
      */
     public interrupt(session:S, transition:string, input?:any) {
-        this.interruptThread(MAIN_THREAD, session as Session<S>, transition, input);
+        this.interruptThread(MAIN_THREAD, session, transition, input);
     }
     
     /**
@@ -114,21 +116,21 @@ export class StateMachine<S = {}, O = any> {
      * Starts a secondary thread. Used only by the BeginThread decorator.
      * @internal
      */
-    public startSecondaryThread(id: ThreadID, session:Session<S>, startState:State<Session<S>>, input:any): void {
+    public startSecondaryThread(id: ThreadID, session:S, startState:State<S>, input:any): void {
         //can't start a thread if it is already running, for safety reasons
-        if (session._threads.get(id)) {
+        if (this.threads.get(session).has(id)) {
             return;
         }
         const thread = this.startThread(session, startState, input);
-        session._threads.set(id, thread);
+        this.threads.get(session).set(id, thread);
         
         thread._runPromise.promise.catch(() => {
             //if a secondary thread ends in a rejection, we should ideally log something, but
             //we do not want to throw an actual error if it does so
         }).then(() => {
             //now that thread is complete, remove it from the list
-            if (session._threads) {
-                session._threads.delete(id);
+            if (this.threads.has(session)) {
+                this.threads.get(session).delete(id);
             }
         });
     }
@@ -137,11 +139,11 @@ export class StateMachine<S = {}, O = any> {
      * Stops a secondary thread. Used only by the EndThread decorator.
      * @internal
      */
-    public stopSecondaryThread(id: ThreadID, session:Session<S>): void {
-        const thread = session._threads.get(id);
+    public stopSecondaryThread(id: ThreadID, session:S): void {
+        const thread = this.threads.get(session).get(id);
         if (thread) {
             this.stopThread(thread);
-            session._threads.delete(id);
+            this.threads.get(session).delete(id);
         }
     }
     
@@ -149,8 +151,8 @@ export class StateMachine<S = {}, O = any> {
      * Interrupts a secondary thread. Used only by the InterruptThread decorator.
      * @internal
      */
-    public interruptThread(id: ThreadID, session:Session<S>, transition:string, input?:any): void {
-        const thread = session._threads.get(id);
+    public interruptThread(id: ThreadID, session:S, transition:string, input?:any): void {
+        const thread = this.threads.get(session).get(id);
         if (!thread) {
             throw new Error(`Unable to interrupt thread ${id} because it isn't running`);
         }
@@ -168,14 +170,14 @@ export class StateMachine<S = {}, O = any> {
         this.findAndRunNextState(session, thread, current, [transition, input]);
     }
     
-    private startThread(session:Session<S>, startState:State<Session<S>>, input:any): Thread {
+    private startThread(session:S, startState:State<S>, input:any): Thread {
         const thread = new Thread();
         thread._runPromise = new ExtPromiseWrapper();
         this.beginState(session, thread, startState, input, null);
         return thread;
     }
     
-    private beginState(session:Session<S>, thread:Thread, state:State<S>, input:any, transition:string) {
+    private beginState(session:S, thread:Thread, state:State<S>, input:any, transition:string) {
         //clear previous state data
         thread._current = state;
         thread._activePromise = new CancelTokenSession();
@@ -224,7 +226,7 @@ export class StateMachine<S = {}, O = any> {
         });
     }
     
-    private findAndRunNextState(session:Session<S>, thread:Thread, state:State<S>, result:[string, any]):void {
+    private findAndRunNextState(session:S, thread:Thread, state:State<S>, result:[string, any]):void {
         let [trans, output] = result;
         if (typeof trans !== 'string') {
             trans = '';
@@ -275,7 +277,7 @@ export class StateMachine<S = {}, O = any> {
         thread._runPromise.reject([`${ERROR_PREFIX}TransitionError`, new Error(`Unable to find transition ${trans} on state ${state.name}`)]);
     }
     
-    private runDecorator(runMode:RunMode, decorator:Decorator<any>, session:Session<any>, state:State<any>, result:[string, any]): void {
+    private runDecorator(runMode:RunMode, decorator:Decorator<any>, session:S, state:State<any>, result:[string, any]): void {
         //only run the decorator if now is the right time
         if (decorator.runMode !== runMode) {
             return;

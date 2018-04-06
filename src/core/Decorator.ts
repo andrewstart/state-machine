@@ -1,6 +1,5 @@
 import {StateMachine} from './StateMachine';
 import {State} from './State';
-import {Session} from './Session';
 import {Transition} from './types';
 
 export enum RunMode {
@@ -17,5 +16,5 @@ export abstract class Decorator<T> {
     
     public abstract init(sm: StateMachine): T;
     
-    public abstract run(sm: StateMachine, session:Session<any>, state:State<any>, result:Transition):void;
+    public abstract run(sm: StateMachine, session:any, state:State<any>, result:Transition):void;
 }

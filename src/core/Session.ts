@@ -10,7 +10,7 @@ export class Thread {
     /**
      * @internal
      */
-    _current: State<BaseSession> = null;
+    _current: State<any> = null;
     /**
      * Promise session wrapping active state's `onEntry()` promise, as well as being available
      * to wrap internal steps.
@@ -22,12 +22,3 @@ export class Thread {
         return this._activePromise.wrap(promise, onCancel);
     }
 }
-
-export interface BaseSession {
-    /**
-     * @internal
-     */
-    _threads: Map<number, Thread>;
-}
-
-export type Session<S> = S & BaseSession;
