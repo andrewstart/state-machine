@@ -25,7 +25,7 @@ describe(`Exec State`, function() {
 		sm.addTransition(`exec output`, exec, last);
 		sm.addTransition(``, last);
 		const session = {};
-		const result = sm.run(session)
+		return sm.run(session)
 		.then((result) => {
 			assert(last.onEntrySpy.calledOnce, `Last state should have been entered`);
 			assert((method as sinon.SinonSpy).calledOnce, `Exec method should have been called one time`);
@@ -36,7 +36,6 @@ describe(`Exec State`, function() {
 			assert.equal(last.onEntrySpy.getCall(0).args[2], 3, `Exec should use the output returned by the method`);
 			assert.equal(last.onEntrySpy.getCall(0).args[3], `exec output`, `Exec should use the output returned by the method`);
 		});
-		return result;
 	});
 	
 	it(`Exec does not improperly handle rejections`, function() {
@@ -49,13 +48,12 @@ describe(`Exec State`, function() {
 		const last = new Resolver(`Last`, `output`, 42);
 		sm.addTransition(`${ERROR_PREFIX}execErrWithoutPrefix`, first, last);
 		sm.addTransition(``, last);
-		const result = sm.run({})
+		return sm.run({})
 		.then((result) => {
 			assert(last.onEntrySpy.calledOnce, `Last state should have been entered`);
 			assert((method as sinon.SinonSpy).calledOnce, `Exec method should have been called one time`);
 			assert.equal(last.onEntrySpy.getCall(0).args[2], 3, `Exec should use the output returned by the method`);
 			assert.equal(last.onEntrySpy.getCall(0).args[3], `${ERROR_PREFIX}execErrWithoutPrefix`, `Exec should use the output returned by the method`);
 		});
-		return result;
 	});
 });

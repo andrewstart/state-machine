@@ -1,7 +1,6 @@
-import {StateMachine, State, Transition, ERROR_PREFIX} from '../';
+import {StateMachine, ERROR_PREFIX} from '../';
 import {ExtPromise, Resolver, TestSession} from './utils';
 import assert = require('assert');
-import sinon = require('sinon');
 
 describe(`Interruption`, function() {
 	it(`Can interrupt a state as an error`, function() {
