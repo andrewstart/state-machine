@@ -25,3 +25,19 @@ export class Rejecter extends State<TestSession> {
 		return Promise.reject(this.err);
 	}
 }
+
+export class ExtPromise extends State<TestSession> {
+	public resolve: Function;
+	public reject: Function;
+	public onEntrySpy:sinon.SinonSpy;
+	constructor(name:string) {
+		super(name);
+		this.onEntrySpy = sinon.spy(this, `onEntry`);
+	}
+	onEntry() {
+		return new Promise<Transition>((resolve, reject) => {
+			this.resolve = resolve;
+			this.reject = reject;
+		});
+	}
+}
