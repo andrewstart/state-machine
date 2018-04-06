@@ -3,5 +3,6 @@ describe('State Machine Library', function() {
 	require('./creation.test');
 	require('./transitions.test');
 	//extensions
+	require('./exec.test');
 	require('./wait.test');
 });
