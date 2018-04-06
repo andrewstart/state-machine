@@ -16,8 +16,10 @@ Experiments with strongly typed state machine code that should be compatible wit
 #### To do:
 * Tests:
 	* Multiple sessions at once
-	* Restarting state machines
 	* BeginThread/EndThread decorators, InterruptThread state
+* Documentation
+	* TSDoc
+	* Example(s)
 * Single Session StateMachine subclass - track the current session data
 so that it does not need to be passed for `stop()` or `interrupt()` calls.
 * Creation of additional basic states - something to wait for multiple parallel states to complete, for loop type thing?

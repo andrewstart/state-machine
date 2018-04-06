@@ -3,6 +3,7 @@ describe('State Machine Library', function() {
 	require('./creation.test');
 	require('./transitions.test');
 	require('./interruption.test');
+	require('./restarting.test');
 	//extensions
 	require('./exec.test');
 	require('./submachine.test');
