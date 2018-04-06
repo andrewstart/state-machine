@@ -16,6 +16,6 @@ export class EndThread<S = any> extends Decorator<void> {
     }
     
     public run(sm:StateMachine, session:S, state:State<any>, result:Transition) {
-        sm.startSecondaryThread(this.threadId, session, state, null);
+        sm.stopSecondaryThread(this.threadId, session);
     }
 }

@@ -44,6 +44,7 @@ describe(`Interruption`, function() {
 		.then((result) => {
 			throw new Error(`Should not have resolved`);
 		}, (errResult) => {
+			assert(first.cancelSpy.calledOnce, `First state should have been cancelled`);
 			assert.equal(errResult[0], `${ERROR_PREFIX}interrupt`, `Should have rejected state machine (due to unhandled error transition)`);
 		});
 		sm.interrupt(session, `interrupt`);
@@ -62,6 +63,7 @@ describe(`Interruption`, function() {
 		.then((result) => {
 			throw new Error(`Should not have resolved`);
 		}, (errResult) => {
+			assert(first.cancelSpy.calledOnce, `First state should have been cancelled`);
 			assert.equal(errResult[0], `${ERROR_PREFIX}interrupt`, `Should have rejected state machine (due to unhandled error transition)`);
 		});
 		sm.interrupt(session, `interrupt`);
@@ -81,6 +83,7 @@ describe(`Interruption`, function() {
 		.then((result) => {
 			throw new Error(`Should not have resolved`);
 		}, (errResult) => {
+			assert(first.cancelSpy.calledOnce, `First state should have been cancelled`);
 			assert.equal(errResult[0], `${ERROR_PREFIX}interrupt`, `Should have rejected state machine (due to unhandled error transition)`);
 		});
 		sm.interrupt(session, `interrupt`);
@@ -99,6 +102,7 @@ describe(`Interruption`, function() {
 		const result = sm.run(session)
 		.then((result) => {
 			assert(last.onEntrySpy.calledOnce, `Last state should have been entered`);
+			assert(first.cancelSpy.calledOnce, `First state should have been cancelled`);
 			assert.equal(last.onEntrySpy.getCall(0).args[3], `${ERROR_PREFIX}interrupt`, `Catching state should have been entered with the interrupt transition`);
 			assert.equal(last.onEntrySpy.getCall(0).args[2], `foobar`, `Catching state should have been entered with the interrupt data`);
 		});
@@ -117,6 +121,7 @@ describe(`Interruption`, function() {
 		const result = sm.run(session)
 		.then((result) => {
 			assert(last.onEntrySpy.calledOnce, `Last state should have been entered`);
+			assert(first.cancelSpy.calledOnce, `First state should have been cancelled`);
 			assert.equal(last.onEntrySpy.getCall(0).args[3], `${ERROR_PREFIX}interrupt`, `Catching state should have been entered with the interrupt transition`);
 			assert.equal(last.onEntrySpy.getCall(0).args[2], `foobar`, `Catching state should have been entered with the interrupt data`);
 		});

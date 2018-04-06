@@ -154,7 +154,8 @@ export class StateMachine<S extends Object = {}, O = any> {
     }
     
     /**
-     * Interrupts a secondary thread. Used only by the InterruptThread decorator.
+     * Interrupts the main thread or a secondary thread.
+     * Used only by the InterruptThread decorator and StateMachine.interrupt().
      * @internal
      */
     public interruptThread(id: ThreadID, session:S, transition:string, input?:any): void {
@@ -168,6 +169,9 @@ export class StateMachine<S extends Object = {}, O = any> {
         this.stopThread(thread);
         //restore run promise
         thread._runPromise = promise;
+        if (typeof transition !== 'string') {
+            transition = '';
+        }
         //ensure transition starts with error prefix
         if (transition[0] !== ERROR_PREFIX) {
             transition = ERROR_PREFIX + transition;

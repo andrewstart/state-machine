@@ -1,4 +1,4 @@
-import {State, Transition} from '../';
+import {State, Transition, Thread} from '../';
 import sinon = require('sinon');
 
 export interface TestSession {
@@ -30,14 +30,16 @@ export class ExtPromise extends State<TestSession> {
 	public resolve: Function;
 	public reject: Function;
 	public onEntrySpy:sinon.SinonSpy;
+	public cancelSpy:sinon.SinonSpy;
 	constructor(name:string) {
 		super(name);
 		this.onEntrySpy = sinon.spy(this, `onEntry`);
+		this.cancelSpy = sinon.spy();
 	}
-	onEntry() {
-		return new Promise<Transition>((resolve, reject) => {
+	onEntry(session:any, thread:Thread) {
+		return thread.wrap(new Promise<Transition>((resolve, reject) => {
 			this.resolve = resolve;
 			this.reject = reject;
-		});
+		}), this.cancelSpy);
 	}
 }

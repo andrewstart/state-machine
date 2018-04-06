@@ -1,6 +1,6 @@
 {
   "name": "state-machine",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "",
   "typings": "lib/index.d.ts",
   "main": "lib/index.js",
