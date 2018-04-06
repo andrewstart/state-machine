@@ -220,7 +220,7 @@ export class StateMachine<S = {}, O = any> {
             this.findAndRunNextState(session, thread, state, result);
         }).catch((err) => {
             //something went wrong in the library - report error and bail
-            thread._runPromise.reject(err);
+            thread._runPromise.reject([`${ERROR_PREFIX}InternalError`, err]);
         });
     }
     

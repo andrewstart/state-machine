@@ -286,4 +286,19 @@ describe(`Transitions`, function() {
 			assert.equal(result[0], `${ERROR_PREFIX}DefaultState`, `Should have rejected with '${ERROR_PREFIX}DefaultState' error transition`);
 		});
 	});
+	
+	it(`StateMachine rejects if internal error occurs`, function() {
+		const sm = new StateMachine<TestSession, number>();
+		const first = new Resolver(`First`, ``);
+		sm.addTransition(null, null, first);
+		const testError = new Error(`TEST ERROR`);
+		(sm as any).findAndRunNextState = () => {throw testError;};
+		return sm.run({})
+		.then((result) => {
+			throw new Error(`Should not have resolved`);
+		}, (result) => {
+			assert.equal(result[0], `${ERROR_PREFIX}InternalError`, `Should have rejected with '${ERROR_PREFIX}InternalError' error transition`);
+			assert.equal(result[1], testError, `Should have rejected with output of the error that was thrown`);
+		});
+	});
 });
