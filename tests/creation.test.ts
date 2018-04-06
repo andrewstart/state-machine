@@ -1,4 +1,4 @@
-import {StateMachine} from '../';
+import {StateMachine, State} from '../';
 import {Resolver} from './utils';
 import assert = require('assert');
 
@@ -6,6 +6,11 @@ describe(`State Machine Creation`, function() {
 	it(`Can instantiate StateMachine`, function() {
 		const sm = new StateMachine();
 		assert.equal(typeof sm.run, `function`, `StateMachine.run should be a function`);
+	});
+	
+	it(`Can create and destroy State`, function() {
+		const sm = new State(`test`);
+		sm.destroy();
 	});
 	
 	it(`Can add first state`, function() {

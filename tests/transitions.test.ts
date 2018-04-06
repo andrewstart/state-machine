@@ -1,4 +1,4 @@
-import {StateMachine, Transition, ERROR_PREFIX} from '../';
+import {StateMachine, State, Transition, ERROR_PREFIX} from '../';
 import {Rejecter, Resolver, TestSession} from './utils';
 import assert = require('assert');
 import sinon = require('sinon');
@@ -272,6 +272,18 @@ describe(`Transitions`, function() {
 				assert(first.onEntrySpy.calledBefore(middle.onEntrySpy), `First state should have been entered before middle state`);
 				assert(middle.onEntrySpy.calledBefore(last.onEntrySpy), `Middle state should have been entered before last state`);
 			});
+		});
+	});
+	
+	it(`Base State rejects if onEntry not overridden`, function() {
+		const sm = new StateMachine<TestSession, number>();
+		const first = new State(`First`);
+		sm.addTransition(null, null, first);
+		return sm.run({})
+		.then((result) => {
+			throw new Error(`Should not have resolved`);
+		}, (result) => {
+			assert.equal(result[0], `${ERROR_PREFIX}DefaultState`, `Should have rejected with '${ERROR_PREFIX}DefaultState' error transition`);
 		});
 	});
 });
