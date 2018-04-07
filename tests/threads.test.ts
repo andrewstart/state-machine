@@ -142,6 +142,30 @@ describe(`Parallel Threads`, function() {
 		});
 	});
 	
+	it(`Attempting to stop a non-running thread is safe`, function() {
+		const sm = new StateMachine<TestSession, number>();
+		const first = new Resolver(`First`, `trans`);
+		sm.addTransition(null, null, first);
+		const mid = new Resolver(`Mid`, ``);
+		sm.addTransition(`trans`, first, mid);
+		const last = new Resolver(`Last`, `output`, 42);
+		sm.addTransition(``, mid, last);
+		sm.addTransition(``, last);
+		
+		const threadBegin = new ExtPromise(`Thread First`);
+		const threadId = sm.addDecorator(new BeginThread(RunMode.START_WITH_STATE, threadBegin), first);
+		sm.addDecorator(new EndThread(RunMode.END_WITH_STATE, threadId), first);
+		sm.addDecorator(new EndThread(RunMode.START_WITH_STATE, threadId), mid);
+		
+		return sm.run({})
+		.then((result) => {
+			assert(first.onEntrySpy.calledOnce, `First state should have been entered`);
+			assert(last.onEntrySpy.calledOnce, `Last state should have been entered`);
+			assert(threadBegin.onEntrySpy.calledOnce, `Thread begin state should have been entered`);
+			assert(threadBegin.cancelSpy.calledOnce, `Thread begin state should have been cancelled`);
+		});
+	});
+	
 	it(`Can interrupt a secondary thread with specific interrupt`, function() {
 		const sm = new StateMachine<TestSession, number>();
 		const first = new Resolver(`First`, `trans`);

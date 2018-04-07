@@ -135,6 +135,7 @@ export class StateMachine<S extends Object = {}, O = any> {
             //we do not want to throw an actual error if it does so
         }).then(() => {
             //now that thread is complete, remove it from the list
+            /* istanbul ignore else: just safety check in case of cleanup */
             if (this.threads.has(session)) {
                 this.threads.get(session).delete(id);
             }
