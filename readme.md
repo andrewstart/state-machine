@@ -16,8 +16,6 @@ Experiments with strongly typed state machine code that should be compatible wit
 #### To do:
 * Tests:
 	* Multiple sessions at once
-	* Decorators (global & local)
-	* BeginThread/EndThread decorators, InterruptThread state
 * Documentation
 	* TSDoc
 	* Example(s)

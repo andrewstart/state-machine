@@ -1,4 +1,4 @@
-import {StateMachine, BeginThread, EndThread, InterruptThread, RunMode, Wait, ERROR_PREFIX, MAIN_THREAD} from '../';
+import {StateMachine, BeginThread, EndThread, InterruptThread, RunMode, Wait, Exec, ERROR_PREFIX, MAIN_THREAD, Transition} from '../';
 import {Rejecter, Resolver, ExtPromise, TestSession} from './utils';
 import assert = require('assert');
 
@@ -50,6 +50,51 @@ describe(`Parallel Threads`, function() {
 			assert(threadBegin.onEntrySpy.calledBefore(last.onEntrySpy), `Thread should have been started before last state`);
 			assert.equal(result[0], `output`, `Final out transition should be that returned by the last state`);
 			assert.equal(result[1], 42, `Final out value should be that returned by the last state`);
+		});
+	});
+	
+	it(`Running threads are stopped when main thread completes`, function() {
+		const sm = new StateMachine<TestSession, number>();
+		const first = new Resolver(`First`, `trans`);
+		sm.addTransition(null, null, first);
+		const last = new Resolver(`Last`, `output`, 42);
+		sm.addTransition(`trans`, first, last);
+		sm.addTransition(``, last);
+		
+		const threadBegin = new ExtPromise(`Thread First`);
+		sm.addDecorator(new BeginThread(RunMode.START_WITH_STATE, threadBegin), first);
+		
+		return sm.run({})
+		.then((result) => {
+			assert(first.onEntrySpy.calledOnce, `First state should have been entered`);
+			assert(last.onEntrySpy.calledOnce, `Last state should have been entered`);
+			assert(threadBegin.onEntrySpy.calledOnce, `Thread begin state should have been entered`);
+			assert(threadBegin.cancelSpy.calledOnce, `Thread begin state should have been cancelled`);
+		});
+	});
+	
+	it(`Can't start the same thread twice`, function() {
+		const sm = new StateMachine<TestSession, number>();
+		const first = new Resolver(`First`, `trans`);
+		sm.addTransition(null, null, first);
+		let count = 0;
+		const mid = new Exec(`Mid`, () => {
+			return Promise.resolve([++count >= 2 ? `trans` : `back`, null] as Transition);
+		});
+		sm.addTransition(``, first, mid);
+		sm.addTransition(`back`, mid, first);
+		const last = new Resolver(`Last`, `output`, 42);
+		sm.addTransition(`trans`, mid, last);
+		sm.addTransition(``, last);
+		
+		const threadBegin = new ExtPromise(`Thread First`);
+		sm.addDecorator(new BeginThread(RunMode.START_WITH_STATE, threadBegin), first);
+		
+		return sm.run({})
+		.then((result) => {
+			assert(first.onEntrySpy.calledTwice, `First state should have been entered twice`);
+			assert(last.onEntrySpy.calledOnce, `Last state should have been entered`);
+			assert(threadBegin.onEntrySpy.calledOnce, `Thread begin state should have been entered one time`);
 		});
 	});
 	
@@ -206,6 +251,29 @@ describe(`Parallel Threads`, function() {
 			assert(threadMid.onEntrySpy.calledOnce, `Thread mid state should have been entered`);
 			assert.equal(mid.onEntrySpy.firstCall.args[2], 12, `Main catch state should have been given the interrupt input`);
 			assert.equal(mid.onEntrySpy.firstCall.args[3], `${ERROR_PREFIX}trans`, `Main catch state should have been given the interrupt transition`);
+		});
+	});
+	
+	it(`Interrupting non-running threads fails StateMachine`, function() {
+		const sm = new StateMachine<TestSession, number>();
+		const first = new Resolver(`First`, `trans`, `foo`);
+		sm.addTransition(null, null, first);
+		const mid = new Resolver(`Mid`, ``);
+		sm.addTransition(`trans`, first, mid);
+		const last = new Resolver(`Last`, `output`, 42);
+		sm.addTransition(``, mid, last);
+		sm.addTransition(``, last);
+		
+		const threadBegin = new ExtPromise(`Thread First`);
+		const threadMid = new Resolver(`Thread Mid`, ``);
+		sm.addTransition(`${ERROR_PREFIX}`, threadBegin, threadMid);
+		sm.addDecorator(new InterruptThread(RunMode.START_WITH_STATE, -1), first);
+		
+		return sm.run({})
+		.then((result) => {
+			throw new Error('Should not have resolved');
+		}, (err) => {
+			assert.ok(err, `An error should have been output`);
 		});
 	});
 });

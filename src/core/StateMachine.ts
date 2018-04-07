@@ -195,8 +195,14 @@ export class StateMachine<S extends Object = {}, O = any> {
         const run = (decorator:Decorator<any>) => {
             this.runDecorator(RunMode.START_WITH_STATE, decorator, session, state, [transition, input]);
         };
-        this.globalDecorators.forEach(run);
-        state.decorators.forEach(run);
+        try {
+            this.globalDecorators.forEach(run);
+            state.decorators.forEach(run);
+        } catch (err) {
+            //something went wrong in the library - report error and bail
+            thread._runPromise.reject([`${ERROR_PREFIX}InternalError`, err]);
+            return;
+        }
         //actually enter the state
         thread._activePromise.wrap(state.onEntry(session, thread, input, transition))
         .catch((error) => {

@@ -1,4 +1,4 @@
-import {StateMachine, State} from '../';
+import {StateMachine, State, ERROR_PREFIX} from '../';
 import {Resolver} from './utils';
 import assert = require('assert');
 
@@ -35,5 +35,26 @@ describe(`State Machine Creation`, function() {
 		const last = new Resolver(`Last`);
 		sm.addTransition(``, last);
 		assert.equal((last as any).transitions.get(``), null, `Last state transitions to null`);
+	});
+	
+	it(`Can't duplicate transitions on states`, function() {
+		assert.throws(function() {
+			const sm = new StateMachine();
+			const first = new Resolver(`First state`);
+			const second = new Resolver(`Second state`);
+			sm.addTransition(``, first, second);
+			const bad = new Resolver(`Also second state`);
+			sm.addTransition(``, first, bad);
+		}, `Should throw an error if a duplicate transition is added`);
+	});
+	
+	it(`Can't duplicate global transitions`, function() {
+		assert.throws(function() {
+			const sm = new StateMachine();
+			const second = new Resolver(`Second state`);
+			sm.addTransition(ERROR_PREFIX, null, second);
+			const bad = new Resolver(`Also second state`);
+			sm.addTransition(ERROR_PREFIX, null, bad);
+		}, `Should throw an error if a duplicate global transition is added`);
 	});
 });

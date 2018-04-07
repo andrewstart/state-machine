@@ -225,6 +225,23 @@ describe(`Transitions`, function() {
 				sinon.assert.match(last.onEntrySpy.firstCall.args[2], {message:`Test error`, name: error.name});
 			});
 		});
+		
+		it(`Empty rejections are converted to error transitions`, function() {
+			const sm = new StateMachine<TestSession, number>();
+			const first = new Rejecter(`First`, undefined);
+			sm.addTransition(null, null, first);
+			const last = new Resolver(`Last`, `output`, 42);
+			sm.addTransition(`${ERROR_PREFIX}UnknownError`, first, last);
+			sm.addTransition(``, last);
+			return sm.run({})
+			.then((result) => {
+				assert(first.onEntrySpy.calledOnce, `First state should have been entered`);
+				assert(last.onEntrySpy.calledOnce, `Last state should have been entered`);
+				assert(first.onEntrySpy.calledBefore(last.onEntrySpy), `First state should have been entered before last state`);
+				assert.equal(last.onEntrySpy.firstCall.args[3], `${ERROR_PREFIX}UnknownError`, `Transition should be the correct error string`);
+				sinon.assert.match(last.onEntrySpy.firstCall.args[2], undefined);
+			});
+		});
 	});
 	
 	describe(`Global Errors`, function() {
