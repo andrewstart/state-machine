@@ -3,7 +3,7 @@ import {Rejecter, Resolver, ExtPromise, TestSession} from './utils';
 import assert = require('assert');
 
 describe(`Parallel Threads`, function() {
-	it(`Secondary threads resolves don't complete the machine`, function() {
+	it(`Secondary thread resolves don't complete the machine`, function() {
 		const sm = new StateMachine<TestSession, number>();
 		const first = new Resolver(`First`, `trans`);
 		sm.addTransition(null, null, first);
@@ -28,7 +28,7 @@ describe(`Parallel Threads`, function() {
 		});
 	});
 	
-	it(`Secondary threads rejections don't complete the machine`, function() {
+	it(`Secondary thread rejections don't complete the machine`, function() {
 		const sm = new StateMachine<TestSession, number>();
 		const first = new Resolver(`First`, `trans`);
 		sm.addTransition(null, null, first);
