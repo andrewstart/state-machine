@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/andrewstart/state-machine.svg?branch=master)](https://travis-ci.org/andrewstart/state-machine)
+
 Experiments with strongly typed state machine code that should be compatible with making a visual editing tool.
 
 #### Goals
