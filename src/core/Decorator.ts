@@ -3,8 +3,8 @@ import {State} from './State';
 import {Transition} from './types';
 
 export enum RunMode {
-    START_WITH_STATE,
-    END_WITH_STATE
+    STATE_START,
+    STATE_END
 }
 
 export abstract class Decorator<T> {

@@ -26,7 +26,7 @@ describe(`Decorators`, function() {
 		it(`Adding Decorators returns value from init()`, function() {
 			const sm = new StateMachine<TestSession, number>();
 			const first = new Resolver(`First`, `trans`, 76);
-			const initVal = sm.addDecorator(new DecoratorSpy(RunMode.START_WITH_STATE, 32), first);
+			const initVal = sm.addDecorator(new DecoratorSpy(RunMode.STATE_START, 32), first);
 			assert.equal(initVal, 32, `initVal should be the output from DecoratorSpy.init()`);
 		});
 		
@@ -37,7 +37,7 @@ describe(`Decorators`, function() {
 			const last = new Resolver(`Last`, `output`, 42);
 			sm.addTransition(`trans`, first, last);
 			sm.addTransition(``, last);
-			const decorator = new DecoratorSpy(RunMode.START_WITH_STATE);
+			const decorator = new DecoratorSpy(RunMode.STATE_START);
 			sm.addDecorator(decorator, last);
 			return sm.run({})
 			.then((result) => {
@@ -57,7 +57,7 @@ describe(`Decorators`, function() {
 			const last = new Resolver(`Last`, `output`, 42);
 			sm.addTransition(`trans`, first, last);
 			sm.addTransition(``, last);
-			const decorator = new DecoratorSpy(RunMode.END_WITH_STATE);
+			const decorator = new DecoratorSpy(RunMode.STATE_END);
 			sm.addDecorator(decorator, first);
 			return sm.run({})
 			.then((result) => {
@@ -77,7 +77,7 @@ describe(`Decorators`, function() {
 			const last = new Resolver(`Last`, `output`, 42);
 			sm.addTransition(`${ERROR_PREFIX}trans`, first, last);
 			sm.addTransition(``, last);
-			const decorator = new DecoratorSpy(RunMode.END_WITH_STATE);
+			const decorator = new DecoratorSpy(RunMode.STATE_END);
 			sm.addDecorator(decorator, first);
 			return sm.run({})
 			.then((result) => {
@@ -94,7 +94,7 @@ describe(`Decorators`, function() {
 	describe(`Global Decorators`, function() {
 		it(`Adding Decorators returns value from init()`, function() {
 			const sm = new StateMachine<TestSession, number>();
-			const initVal = sm.addDecorator(new DecoratorSpy(RunMode.START_WITH_STATE, 32));
+			const initVal = sm.addDecorator(new DecoratorSpy(RunMode.STATE_START, 32));
 			assert.equal(initVal, 32, `initVal should be the output from DecoratorSpy.init()`);
 		});
 		
@@ -105,7 +105,7 @@ describe(`Decorators`, function() {
 			const last = new Resolver(`Last`, `output`, 42);
 			sm.addTransition(`trans`, first, last);
 			sm.addTransition(``, last);
-			const decorator = new DecoratorSpy(RunMode.START_WITH_STATE);
+			const decorator = new DecoratorSpy(RunMode.STATE_START);
 			sm.addDecorator(decorator);
 			return sm.run({})
 			.then((result) => {
@@ -126,7 +126,7 @@ describe(`Decorators`, function() {
 			const last = new Resolver(`Last`, `output`, 42);
 			sm.addTransition(`trans`, first, last);
 			sm.addTransition(``, last);
-			const decorator = new DecoratorSpy(RunMode.END_WITH_STATE);
+			const decorator = new DecoratorSpy(RunMode.STATE_END);
 			sm.addDecorator(decorator);
 			return sm.run({})
 			.then((result) => {
@@ -147,7 +147,7 @@ describe(`Decorators`, function() {
 			const last = new Resolver(`Last`, `output`, 42);
 			sm.addTransition(`${ERROR_PREFIX}trans`, first, last);
 			sm.addTransition(``, last);
-			const decorator = new DecoratorSpy(RunMode.END_WITH_STATE);
+			const decorator = new DecoratorSpy(RunMode.STATE_END);
 			sm.addDecorator(decorator);
 			return sm.run({})
 			.then((result) => {

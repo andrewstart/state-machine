@@ -194,7 +194,7 @@ export class StateMachine<S extends Object = {}, O = any> {
         thread._activePromise = new CancelTokenSession();
         //run decorators
         const run = (decorator:Decorator<any>) => {
-            this.runDecorator(RunMode.START_WITH_STATE, decorator, session, state, [transition, input]);
+            this.runDecorator(RunMode.STATE_START, decorator, session, state, [transition, input]);
         };
         try {
             this.globalDecorators.forEach(run);
@@ -232,7 +232,7 @@ export class StateMachine<S extends Object = {}, O = any> {
         }).then((result) => {
             //run decorators
             const run = (decorator:Decorator<any>) => {
-                this.runDecorator(RunMode.END_WITH_STATE, decorator, session, state, result);
+                this.runDecorator(RunMode.STATE_END, decorator, session, state, result);
             };
             this.globalDecorators.forEach(run);
             state.decorators.forEach(run);

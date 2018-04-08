@@ -15,7 +15,7 @@ describe(`Parallel Threads`, function() {
 		
 		const threadBegin = new Resolver(`Thread First`);
 		sm.addTransition(``, threadBegin);
-		sm.addDecorator(new BeginThread(RunMode.START_WITH_STATE, threadBegin), first);
+		sm.addDecorator(new BeginThread(RunMode.STATE_START, threadBegin), first);
 		
 		return sm.run({})
 		.then((result) => {
@@ -40,7 +40,7 @@ describe(`Parallel Threads`, function() {
 		
 		const threadBegin = new Rejecter(`Thread First`, `!!!`);
 		sm.addTransition(``, threadBegin);
-		sm.addDecorator(new BeginThread(RunMode.START_WITH_STATE, threadBegin), first);
+		sm.addDecorator(new BeginThread(RunMode.STATE_START, threadBegin), first);
 		
 		return sm.run({})
 		.then((result) => {
@@ -62,7 +62,7 @@ describe(`Parallel Threads`, function() {
 		sm.addTransition(``, last);
 		
 		const threadBegin = new ExtPromise(`Thread First`);
-		sm.addDecorator(new BeginThread(RunMode.START_WITH_STATE, threadBegin), first);
+		sm.addDecorator(new BeginThread(RunMode.STATE_START, threadBegin), first);
 		
 		return sm.run({})
 		.then((result) => {
@@ -88,7 +88,7 @@ describe(`Parallel Threads`, function() {
 		sm.addTransition(``, last);
 		
 		const threadBegin = new ExtPromise(`Thread First`);
-		sm.addDecorator(new BeginThread(RunMode.START_WITH_STATE, threadBegin), first);
+		sm.addDecorator(new BeginThread(RunMode.STATE_START, threadBegin), first);
 		
 		return sm.run({})
 		.then((result) => {
@@ -107,8 +107,8 @@ describe(`Parallel Threads`, function() {
 		sm.addTransition(``, last);
 		
 		const threadBegin = new ExtPromise(`Thread First`);
-		const threadId = sm.addDecorator(new BeginThread(RunMode.START_WITH_STATE, threadBegin), first);
-		sm.addDecorator(new EndThread(RunMode.END_WITH_STATE, threadId), first);
+		const threadId = sm.addDecorator(new BeginThread(RunMode.STATE_START, threadBegin), first);
+		sm.addDecorator(new EndThread(RunMode.STATE_END, threadId), first);
 		
 		return sm.run({})
 		.then((result) => {
@@ -130,8 +130,8 @@ describe(`Parallel Threads`, function() {
 		sm.addTransition(``, last);
 		
 		const threadBegin = new ExtPromise(`Thread First`);
-		const threadId = sm.addDecorator(new BeginThread(RunMode.END_WITH_STATE, threadBegin), first);
-		sm.addDecorator(new EndThread(RunMode.START_WITH_STATE, threadId), mid);
+		const threadId = sm.addDecorator(new BeginThread(RunMode.STATE_END, threadBegin), first);
+		sm.addDecorator(new EndThread(RunMode.STATE_START, threadId), mid);
 		
 		return sm.run({})
 		.then((result) => {
@@ -153,9 +153,9 @@ describe(`Parallel Threads`, function() {
 		sm.addTransition(``, last);
 		
 		const threadBegin = new ExtPromise(`Thread First`);
-		const threadId = sm.addDecorator(new BeginThread(RunMode.START_WITH_STATE, threadBegin), first);
-		sm.addDecorator(new EndThread(RunMode.END_WITH_STATE, threadId), first);
-		sm.addDecorator(new EndThread(RunMode.START_WITH_STATE, threadId), mid);
+		const threadId = sm.addDecorator(new BeginThread(RunMode.STATE_START, threadBegin), first);
+		sm.addDecorator(new EndThread(RunMode.STATE_END, threadId), first);
+		sm.addDecorator(new EndThread(RunMode.STATE_START, threadId), mid);
 		
 		return sm.run({})
 		.then((result) => {
@@ -179,8 +179,8 @@ describe(`Parallel Threads`, function() {
 		const threadBegin = new ExtPromise(`Thread First`);
 		const threadMid = new Resolver(`Thread Mid`, ``);
 		sm.addTransition(`${ERROR_PREFIX}!!!`, threadBegin, threadMid);
-		const threadId = sm.addDecorator(new BeginThread(RunMode.START_WITH_STATE, threadBegin), first);
-		sm.addDecorator(new InterruptThread(RunMode.START_WITH_STATE, threadId, [`${ERROR_PREFIX}!!!`, 12]), mid);
+		const threadId = sm.addDecorator(new BeginThread(RunMode.STATE_START, threadBegin), first);
+		sm.addDecorator(new InterruptThread(RunMode.STATE_START, threadId, [`${ERROR_PREFIX}!!!`, 12]), mid);
 		
 		return sm.run({})
 		.then((result) => {
@@ -207,8 +207,8 @@ describe(`Parallel Threads`, function() {
 		const threadBegin = new ExtPromise(`Thread First`);
 		const threadMid = new Resolver(`Thread Mid`, ``);
 		sm.addTransition(`${ERROR_PREFIX}trans`, threadBegin, threadMid);
-		const threadId = sm.addDecorator(new BeginThread(RunMode.START_WITH_STATE, threadBegin), first);
-		sm.addDecorator(new InterruptThread(RunMode.START_WITH_STATE, threadId), mid);
+		const threadId = sm.addDecorator(new BeginThread(RunMode.STATE_START, threadBegin), first);
+		sm.addDecorator(new InterruptThread(RunMode.STATE_START, threadId), mid);
 		
 		return sm.run({})
 		.then((result) => {
@@ -235,8 +235,8 @@ describe(`Parallel Threads`, function() {
 		const threadBegin = new ExtPromise(`Thread First`);
 		const threadMid = new Resolver(`Thread Mid`, ``);
 		sm.addTransition(`${ERROR_PREFIX}`, threadBegin, threadMid);
-		const threadId = sm.addDecorator(new BeginThread(RunMode.START_WITH_STATE, threadBegin), first);
-		sm.addDecorator(new InterruptThread(RunMode.START_WITH_STATE, threadId), first);
+		const threadId = sm.addDecorator(new BeginThread(RunMode.STATE_START, threadBegin), first);
+		sm.addDecorator(new InterruptThread(RunMode.STATE_START, threadId), first);
 		
 		return sm.run({})
 		.then((result) => {
@@ -263,8 +263,8 @@ describe(`Parallel Threads`, function() {
 		const threadBegin = new Resolver(`Thread First`);
 		const threadMid = new Resolver(`Thread Mid`, ``);
 		sm.addTransition(``, threadBegin, threadMid);
-		sm.addDecorator(new BeginThread(RunMode.START_WITH_STATE, threadBegin), first);
-		sm.addDecorator(new InterruptThread(RunMode.END_WITH_STATE, MAIN_THREAD, [`${ERROR_PREFIX}trans`, 12]), threadMid);
+		sm.addDecorator(new BeginThread(RunMode.STATE_START, threadBegin), first);
+		sm.addDecorator(new InterruptThread(RunMode.STATE_END, MAIN_THREAD, [`${ERROR_PREFIX}trans`, 12]), threadMid);
 		
 		return sm.run({})
 		.then((result) => {
@@ -291,7 +291,7 @@ describe(`Parallel Threads`, function() {
 		const threadBegin = new ExtPromise(`Thread First`);
 		const threadMid = new Resolver(`Thread Mid`, ``);
 		sm.addTransition(`${ERROR_PREFIX}`, threadBegin, threadMid);
-		sm.addDecorator(new InterruptThread(RunMode.START_WITH_STATE, -1), first);
+		sm.addDecorator(new InterruptThread(RunMode.STATE_START, -1), first);
 		
 		return sm.run({})
 		.then((result) => {
