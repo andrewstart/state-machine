@@ -1,12 +1,12 @@
 import {CancelTokenSession, CancelHandler} from './CancelTokenSession';
-import {ExtPromiseWrapper} from './ExtPromiseWrapper';
+import {ExternalPromise} from './ExternalPromise';
 import {State} from './State';
 
 export class Thread {
     /**
      * @internal
      */
-    _runPromise: ExtPromiseWrapper<[string, any]> = new ExtPromiseWrapper();
+    _runPromise: ExternalPromise<[string, any]> = new ExternalPromise();
     /**
      * @internal
      */

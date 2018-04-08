@@ -1,7 +1,7 @@
 import {Thread} from './Session';
 import {State} from './State';
 import {Decorator, RunMode} from './Decorator';
-import {ExtPromiseWrapper} from './ExtPromiseWrapper';
+import {ExternalPromise} from './ExternalPromise';
 import {CancelTokenSession} from './CancelTokenSession';
 import {WILDCARD_TRANSITION, ERROR_PREFIX, ERROR_SPLIT} from './const';
 import {Transition} from './types';
@@ -183,7 +183,7 @@ export class StateMachine<S extends Object = {}, O = any> {
     
     private startThread(session:S, startState:State<S>, input:any): Thread {
         const thread = new Thread();
-        thread._runPromise = new ExtPromiseWrapper();
+        thread._runPromise = new ExternalPromise();
         this.beginState(session, thread, startState, input, null);
         return thread;
     }

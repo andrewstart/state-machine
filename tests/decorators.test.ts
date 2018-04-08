@@ -21,7 +21,7 @@ class DecoratorSpy extends Decorator<number> {
 	}
 }
 
-describe(`Transitions`, function() {
+describe(`Decorators`, function() {
 	describe(`Local Decorators`, function() {
 		it(`Adding Decorators returns value from init()`, function() {
 			const sm = new StateMachine<TestSession, number>();
