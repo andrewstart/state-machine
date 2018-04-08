@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/andrewstart/state-machine.svg?branch=master)](https://travis-ci.org/andrewstart/state-machine)
+
 Experiments with strongly typed state machine code that should be compatible with making a visual editing tool.
 
 #### Goals
@@ -14,7 +16,12 @@ Experiments with strongly typed state machine code that should be compatible wit
 `~` will catch all errors.
 
 #### To do:
-* StateMachine mode: Single session or multi-session - in single session track the current session data
+* Tests:
+	* Multiple sessions at once
+* Documentation
+	* TSDoc
+	* Example(s)
+* Single Session StateMachine subclass - track the current session data
 so that it does not need to be passed for `stop()` or `interrupt()` calls.
 * Creation of additional basic states - something to wait for multiple parallel states to complete, for loop type thing?
 * Figure out good way of "pausing" and restarting session

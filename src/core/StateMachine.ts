@@ -1,24 +1,27 @@
-import {Session, Thread} from './Session';
+import {Thread} from './Session';
 import {State} from './State';
 import {Decorator, RunMode} from './Decorator';
-import {ExtPromiseWrapper} from './ExtPromiseWrapper';
+import {ExternalPromise} from './ExternalPromise';
 import {CancelTokenSession} from './CancelTokenSession';
 import {WILDCARD_TRANSITION, ERROR_PREFIX, ERROR_SPLIT} from './const';
+import {Transition} from './types';
 
 export type ThreadID = number;
 
 export const MAIN_THREAD:ThreadID = 0;
 
-export class StateMachine<S = {}, O = any> {
+export class StateMachine<S extends Object = {}, O = any> {
     private firstState: State<S>;
     private globalCatches: Map<string, State<S>>;
     private nextThreadId: ThreadID;
     private globalDecorators: Set<Decorator<any>>;
+    private threads: WeakMap<S, Map<number, Thread>>;
     
     constructor() {
         this.globalCatches = new Map();
         this.globalDecorators = new Set();
         this.nextThreadId = MAIN_THREAD + 1;
+        this.threads = new WeakMap();
     }
     
     public addTransition<T>(name:null, source:null, firstState:State<S, void, any>):void;
@@ -48,7 +51,7 @@ export class StateMachine<S = {}, O = any> {
         source.transitions.set(name, dest);
     }
     
-    public addDecorator<T>(decorator:Decorator<T>, targetState?:State<Session<S>>):T {
+    public addDecorator<T>(decorator:Decorator<T>, targetState?:State<S>):T {
         if (targetState) {
             //if targeting a specific state, add decorator to just that state
             targetState.decorators.add(decorator);
@@ -59,46 +62,52 @@ export class StateMachine<S = {}, O = any> {
     }
     
     public run(session:S):Promise<[string, O]>;
-    public run<I>(session:S, startState:State<Session<S>, I, any>, input:I):Promise<[string, O]>;
-    public run<I>(session:S, startState?:State<Session<S>, I, any>, input?:I):Promise<[string, O]> {
-        const realSession = session as (Session<S>);
-        realSession._threads = new Map();
+    public run<I>(session:S, startState:State<S, I, any>, input:I):Promise<[string, O]>;
+    public run<I>(session:S, startState?:State<S, I, any>, input?:I):Promise<[string, O]> {
+        if (this.threads.has(session)) {
+            throw new Error('StateMachine is already running with session');
+        }
+        this.threads.set(session, new Map());
         if (!startState) {
             startState = this.firstState;
         }
-        const thread = this.startThread(realSession, startState, input);
-        realSession._threads.set(MAIN_THREAD, thread);
+        const thread = this.startThread(session, startState, input);
+        this.threads.get(session).set(MAIN_THREAD, thread);
         
         return thread._runPromise.promise
         .then((output) => {
             //ensure all threads are stopped
-            this.stop(realSession);
+            this.stop(session);
             return output;
         }, (error) => {
             //ensure all threads are stopped
-            this.stop(realSession);
+            this.stop(session);
             throw error;
         });
     }
     
     /**
-     * Stops execution. In addition, clears promise/callback variables from the session so that it
-     * is safe(r) for JSON.stringify() and can be used to restart execution.
+     * Stops execution.
      */
-    public stop(session:S) {
-        const realSession = session as (Session<S>);
-        realSession._threads.forEach((thread) => {
+    public stop(session:S): void {
+        if (!this.threads.has(session)) {
+            return;
+        }
+        this.threads.get(session).forEach((thread) => {
             this.stopThread(thread);
         });
-        realSession._threads = null;
+        this.threads.delete(session);
     }
     
     /**
      * Injects an error into the state machine, interrupting the current state and performing
      * standard error transition handling to determine where to go next.
      */
-    public interrupt(session:S, transition:string, input?:any) {
-        this.interruptThread(MAIN_THREAD, session as Session<S>, transition, input);
+    public interrupt(session:S, transition:string, input?:any): void {
+        if (!this.threads.has(session)) {
+            throw new Error(`Can't interrupt session - not running`);
+        }
+        this.interruptThread(MAIN_THREAD, session, transition, input);
     }
     
     /**
@@ -113,21 +122,22 @@ export class StateMachine<S = {}, O = any> {
      * Starts a secondary thread. Used only by the BeginThread decorator.
      * @internal
      */
-    public startSecondaryThread(id: ThreadID, session:Session<S>, startState:State<Session<S>>, input:any): void {
+    public startSecondaryThread(id: ThreadID, session:S, startState:State<S>, input:any): void {
         //can't start a thread if it is already running, for safety reasons
-        if (session._threads.get(id)) {
+        if (this.threads.get(session).has(id)) {
             return;
         }
         const thread = this.startThread(session, startState, input);
-        session._threads.set(id, thread);
+        this.threads.get(session).set(id, thread);
         
         thread._runPromise.promise.catch(() => {
             //if a secondary thread ends in a rejection, we should ideally log something, but
             //we do not want to throw an actual error if it does so
         }).then(() => {
             //now that thread is complete, remove it from the list
-            if (session._threads) {
-                session._threads.delete(id);
+            /* istanbul ignore else: just safety check in case of cleanup */
+            if (this.threads.has(session)) {
+                this.threads.get(session).delete(id);
             }
         });
     }
@@ -136,20 +146,21 @@ export class StateMachine<S = {}, O = any> {
      * Stops a secondary thread. Used only by the EndThread decorator.
      * @internal
      */
-    public stopSecondaryThread(id: ThreadID, session:Session<S>): void {
-        const thread = session._threads.get(id);
+    public stopSecondaryThread(id: ThreadID, session:S): void {
+        const thread = this.threads.get(session).get(id);
         if (thread) {
             this.stopThread(thread);
-            session._threads.delete(id);
+            this.threads.get(session).delete(id);
         }
     }
     
     /**
-     * Interrupts a secondary thread. Used only by the InterruptThread decorator.
+     * Interrupts the main thread or a secondary thread.
+     * Used only by the InterruptThread decorator and StateMachine.interrupt().
      * @internal
      */
-    public interruptThread(id: ThreadID, session:Session<S>, transition:string, input?:any): void {
-        const thread = session._threads.get(id);
+    public interruptThread(id: ThreadID, session:S, transition:string, input?:any): void {
+        const thread = this.threads.get(session).get(id);
         if (!thread) {
             throw new Error(`Unable to interrupt thread ${id} because it isn't running`);
         }
@@ -159,6 +170,9 @@ export class StateMachine<S = {}, O = any> {
         this.stopThread(thread);
         //restore run promise
         thread._runPromise = promise;
+        if (typeof transition !== 'string') {
+            transition = '';
+        }
         //ensure transition starts with error prefix
         if (transition[0] !== ERROR_PREFIX) {
             transition = ERROR_PREFIX + transition;
@@ -167,23 +181,29 @@ export class StateMachine<S = {}, O = any> {
         this.findAndRunNextState(session, thread, current, [transition, input]);
     }
     
-    private startThread(session:Session<S>, startState:State<Session<S>>, input:any): Thread {
+    private startThread(session:S, startState:State<S>, input:any): Thread {
         const thread = new Thread();
-        thread._runPromise = new ExtPromiseWrapper();
+        thread._runPromise = new ExternalPromise();
         this.beginState(session, thread, startState, input, null);
         return thread;
     }
     
-    private beginState(session:Session<S>, thread:Thread, state:State<S>, input:any, transition:string) {
+    private beginState(session:S, thread:Thread, state:State<S>, input:any, transition:string) {
         //clear previous state data
         thread._current = state;
         thread._activePromise = new CancelTokenSession();
         //run decorators
-        const run = (decorator) => {
-            this.runDecorator(RunMode.START_WITH_STATE, decorator, session, state, [transition, input]);
+        const run = (decorator:Decorator<any>) => {
+            this.runDecorator(RunMode.STATE_START, decorator, session, state, [transition, input]);
         };
-        this.globalDecorators.forEach(run);
-        state.decorators.forEach(run);
+        try {
+            this.globalDecorators.forEach(run);
+            state.decorators.forEach(run);
+        } catch (err) {
+            //something went wrong in the library - report error and bail
+            thread._runPromise.reject([`${ERROR_PREFIX}InternalError`, err]);
+            return;
+        }
         //actually enter the state
         thread._activePromise.wrap(state.onEntry(session, thread, input, transition))
         .catch((error) => {
@@ -195,33 +215,39 @@ export class StateMachine<S = {}, O = any> {
                         //ensure first character is a tilde, for an error transition
                         error[0] = ERROR_PREFIX + error[0];
                     }
-                    return error as [string, any];
+                    return error as Transition;
                 }
                 if (typeof error === 'string') {
                     if (error[0] !== ERROR_PREFIX) {
                         //ensure first character is a tilde, for an error transition
                         error = ERROR_PREFIX + error;
                     }
-                    return [error, null] as [string, any];
+                    return [error, null] as Transition;
                 }
                 if (error instanceof Error) {
-                    return [`${ERROR_PREFIX}${error.name}`, error] as [string, any];
+                    return [`${ERROR_PREFIX}${error.name}`, error] as Transition;
                 }
             }
-            return [`${ERROR_PREFIX}UnknownError`, error] as [string, any];
+            return [`${ERROR_PREFIX}UnknownError`, error] as Transition;
         }).then((result) => {
             //run decorators
-            const run = (decorator) => {
-                this.runDecorator(RunMode.END_WITH_STATE, decorator, session, state, result);
+            const run = (decorator:Decorator<any>) => {
+                this.runDecorator(RunMode.STATE_END, decorator, session, state, result);
             };
             this.globalDecorators.forEach(run);
             state.decorators.forEach(run);
             this.findAndRunNextState(session, thread, state, result);
+        }).catch((err) => {
+            //something went wrong in the library - report error and bail
+            thread._runPromise.reject([`${ERROR_PREFIX}InternalError`, err]);
         });
     }
     
-    private findAndRunNextState(session:Session<S>, thread:Thread, state:State<S>, result:[string, any]):void {
-        const [trans, output] = result;
+    private findAndRunNextState(session:S, thread:Thread, state:State<S>, result:[string, any]):void {
+        let [trans, output] = result;
+        if (typeof trans !== 'string') {
+            trans = '';
+        }
         const transMap = state.transitions;
         //find and begin next state, or resolve session._runPromise
         if (trans[0] === ERROR_PREFIX) {
@@ -268,7 +294,7 @@ export class StateMachine<S = {}, O = any> {
         thread._runPromise.reject([`${ERROR_PREFIX}TransitionError`, new Error(`Unable to find transition ${trans} on state ${state.name}`)]);
     }
     
-    private runDecorator(runMode:RunMode, decorator:Decorator<any>, session:Session<any>, state:State<any>, result:[string, any]): void {
+    private runDecorator(runMode:RunMode, decorator:Decorator<any>, session:S, state:State<any>, result:[string, any]): void {
         //only run the decorator if now is the right time
         if (decorator.runMode !== runMode) {
             return;
@@ -283,10 +309,9 @@ export class StateMachine<S = {}, O = any> {
     private generateErrorTransitionList(transition:string):string[] {
         //start with the general error transition
         const out:string[] = [ERROR_PREFIX];
-        const split = transition.split(ERROR_SPLIT);
         //if transition contains ERROR_SPLIT (split.length > 1), hit all the intermediate transitions that could be made
-        for (let i = 0; i < split.length - 1; ++i) {
-            out.unshift(split.slice(0, i).join(ERROR_PREFIX));
+        for (let index = -1; (index = transition.indexOf(ERROR_SPLIT, index + 1)) > -1;) {
+            out.unshift(transition.substring(0, index));
         }
         out.unshift(transition);
         return out;

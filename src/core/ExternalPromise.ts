@@ -1,7 +1,7 @@
 /**
  * A promise wrapper that exposes the resolve and reject methods of a promise
  */
-export class ExtPromiseWrapper<T> {
+export class ExternalPromise<T> {
     /**
      * Should be called to resolve the promise of this wrapper
      */

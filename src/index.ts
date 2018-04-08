@@ -3,6 +3,7 @@ export * from './core/Decorator';
 export * from './core/Session';
 export * from './core/State';
 export * from './core/StateMachine';
+export * from './core/types';
 
 export * from './extensions/Exec';
 export * from './extensions/SubMachine';

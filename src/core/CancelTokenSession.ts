@@ -19,14 +19,6 @@ export class CancelTokenSession {
     }
 
     /**
-     * Number of outstanding promises
-     * @returns {number}
-     */
-    size(): number {
-        return this._outstanding.size;
-    }
-
-    /**
      * Wraps a promise with a token and adds to this session
      * @param {Promise<T>} promise
      * @param {CancelHandler} [onCancel] - Handler function for cancel events

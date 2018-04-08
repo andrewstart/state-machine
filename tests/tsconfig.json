@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "target": "es6",
+        "allowJs": false,
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "noUnusedLocals": true,
+        "typeRoots": ["../node_modules/@types"]
+    },
+    "compileOnSave": false,
+    "include": [
+        "./*.ts"
+    ]
+}
