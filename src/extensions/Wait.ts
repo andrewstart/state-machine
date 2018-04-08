@@ -1,5 +1,5 @@
 import {State} from '../core/State';
-import {Thread} from '../core/Session';
+import {Thread} from '../core/Thread';
 import {Transition} from '../core/types';
 
 export class Wait<S, I = any> extends State<S, I, I> {

@@ -1,4 +1,4 @@
-import {Thread} from './Session';
+import {Thread} from './Thread';
 import {Decorator} from './Decorator';
 import {ERROR_PREFIX} from './const';
 import {Transition} from './types';

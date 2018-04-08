@@ -1,5 +1,5 @@
 import {State} from '../core/State';
-import {Thread} from '../core/Session';
+import {Thread} from '../core/Thread';
 import {StateMachine} from '../core/StateMachine';
 import {Transition} from '../core/types';
 

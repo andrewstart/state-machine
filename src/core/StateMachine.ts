@@ -1,4 +1,4 @@
-import {Thread} from './Session';
+import {Thread} from './Thread';
 import {State} from './State';
 import {Decorator, RunMode} from './Decorator';
 import {ExternalPromise} from './ExternalPromise';
