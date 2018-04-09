@@ -10,7 +10,8 @@
     "lint": "tslint -c tslint.json src/**/*.ts",
     "test": "nyc mocha -r ts-node/register tests/index.ts",
     "report": "nyc report --reporter=html",
-    "watch": "tsc -w"
+    "watch": "tsc -w",
+    "docs": "typedoc --target ES6 --mode file --includeDeclarations --out docs/ \"lib/index.d.ts\""
   },
   "author": "Andrew Start <andrew.start@jibo.com>",
   "license": "MIT",
@@ -29,6 +30,7 @@
     "sinon": "^4.5.0",
     "ts-node": "^5.0.1",
     "tslint": "^5.9.1",
+    "typedoc": "^0.11.1",
     "typescript": "~2.8.1"
   }
 }

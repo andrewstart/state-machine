@@ -1,8 +1,8 @@
-export type CancelHandler = () => void;
-
+import {CancelHandler} from '../types';
 /**
- * @description Wraps a promise so that it can be cancelled, and if so does not resolve to
+ * Wraps a promise so that it can be cancelled, and if so does not resolve to
  * the rest of its chain.
+ * @internal
  */
 export class CancelToken {
     /**
@@ -15,8 +15,8 @@ export class CancelToken {
 
     /**
      * Creates an instance of CancelToken.
-     * @param {Promise<any>} wrappedPromise - The promise to wrap
-     * @param {CancelHandler} [onCancel] - Handler function for cancel events
+     * @param wrappedPromise The promise to wrap
+     * @param onCancel Handler function for cancel events
      */
     constructor(wrappedPromise: Promise<any>, onCancel?: CancelHandler) {
         this._onCancel = onCancel;

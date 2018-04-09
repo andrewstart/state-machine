@@ -1,9 +1,9 @@
-import { CancelToken, CancelHandler } from './CancelToken';
-
-export { CancelHandler };
+import { CancelToken } from './CancelToken';
+import { CancelHandler } from '../types';
 
 /**
- * @description A class that represents a session for a set of promise tokens
+ * A class that represents a session for a set of promise tokens
+ * @internal
  */
 export class CancelTokenSession {
     private _outstanding = new Set<CancelToken>();
@@ -20,9 +20,9 @@ export class CancelTokenSession {
 
     /**
      * Wraps a promise with a token and adds to this session
-     * @param {Promise<T>} promise
-     * @param {CancelHandler} [onCancel] - Handler function for cancel events
-     * @returns {Promise<T>}
+     * @param promise The promise to wrap
+     * @param onCancel Handler function for cancel events
+     * @returns The wrapped promise.
      */
     wrap<T>(promise: Promise<T>, onCancel?:CancelHandler): Promise<T> {
         const token = new CancelToken(promise, onCancel);
@@ -31,8 +31,6 @@ export class CancelTokenSession {
 
     /**
      * Adds a cancel token to this session
-     * @template T
-     * @param {CancelToken} token
      */
     addToken<T>(token: CancelToken): Promise<T> {
         this._outstanding.add(token);
