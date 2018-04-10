@@ -1,5 +1,6 @@
 /**
  * A promise wrapper that exposes the resolve and reject methods of a promise
+ * @internal
  */
 export class ExternalPromise<T> {
     /**
