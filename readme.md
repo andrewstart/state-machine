@@ -24,6 +24,7 @@ Experiments with strongly typed state machine code that should be compatible wit
 so that it does not need to be passed for `stop()` or `interrupt()` calls.
 * Creation of additional basic states - something to wait for multiple parallel states to complete, for loop type thing?
 * Figure out good way of "pausing" and restarting session
+* Do decorators (particularly local ones) run at the end of a state if the state was interrupted?
 
 #### Decorator Ideas:
 * Global decorators - debug via history trace; debug via active logging; callback for unit testing
