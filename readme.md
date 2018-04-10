@@ -19,7 +19,6 @@ Experiments with strongly typed state machine code that should be compatible wit
 * Tests:
 	* Multiple sessions at once
 * Documentation
-	* TSDoc
 	* Example(s)
 * Single Session StateMachine subclass - track the current session data
 so that it does not need to be passed for `stop()` or `interrupt()` calls.
