@@ -27,7 +27,10 @@ export abstract class Decorator<T> {
      * @internal
      */
     public runMode: RunMode;
-    
+
+    /**
+     * @param mode When the Decorator will be run.
+     */
     constructor(mode: RunMode) {
         this.runMode = mode;
     }
