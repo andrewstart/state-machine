@@ -7,6 +7,7 @@ describe('State Machine Library', function() {
     require('./restarting.test');
     //extensions
     require('./exec.test');
+    require('./singleSessionMachine.test');
     require('./submachine.test');
     require('./threads.test');
     require('./wait.test');

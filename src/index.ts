@@ -6,6 +6,7 @@ export * from './core/StateMachine';
 export * from './core/types';
 
 export * from './extensions/Exec';
+export * from './extensions/SingleSessionMachine';
 export * from './extensions/SubMachine';
 export * from './extensions/Wait';
 
